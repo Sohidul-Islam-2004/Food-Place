@@ -209,18 +209,7 @@ textarea:focus {
     place-items: center
 }
 
-.av {
-    flex: none;
-    width: 34px;
-    height: 34px;
-    border-radius: 50%;
-    display: inline-grid;
-    place-items: center;
-    background: var(--accent-bg);
-    color: var(--accent);
-    font-weight: 700;
-    text-transform: uppercase
-}
+
 
 .who {
     display: flex;
@@ -823,9 +812,11 @@ dialog form {
 
 .att-card header {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: .7rem;
-    margin-bottom: .95rem
+    margin-bottom: .95rem;
+    padding-bottom: .85rem;
+    border-bottom: 1px solid var(--line)
 }
 
 .att-card .nm {
@@ -835,9 +826,16 @@ dialog form {
 
 .att-card .nm b {
     display: block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap
+    color: var(--ink);
+    font-size: 1.15rem;
+    font-weight: 750;
+    line-height: 1.25;
+    overflow-wrap: anywhere
+}
+
+.att-card .nm .sub {
+    margin-top: .2rem;
+    font-size: .78rem
 }
 
 .off-chip {
@@ -880,6 +878,7 @@ dialog form {
 }
 
 .att-card .np {
+    flex: none;
     text-align: right;
     line-height: 1.2
 }
