@@ -41,7 +41,7 @@ async function calculatePayroll(ym) {
 
   return staff.map(s => {
     const j = new Date(s.joinDate), mine = count[s._id] || {};
-    let y = j.getFullYear(), m = j.getMonth() + 1, carry = 0, r = null;
+    let y = j.getUTCFullYear(), m = j.getUTCMonth() + 1, carry = 0, r = null;
     while (y < Y || (y === Y && m <= M)) {
       const avail = carry + FREE_OFF, used = mine[`${y}-${String(m).padStart(2, '0')}`] || 0;
       r = { avail, used, unpaid: Math.max(0, used - avail), carry: Math.max(0, avail - used) };
@@ -49,10 +49,11 @@ async function calculatePayroll(ym) {
     }
     const a = adj.find(x => String(x.staff) === String(s._id)) || {}, daily = s.salary / days;
     r = r || { avail: 0, used: 0, unpaid: 0, carry: 0 };
-    const base = r.avail ? Math.round(daily * (days - r.unpaid)) : 0;
+    const pre = (j.getUTCFullYear() === Y && j.getUTCMonth() + 1 === M) ? j.getUTCDate() - 1 : 0; // যোগদানের আগের দিন
+    const base = r.avail ? Math.round(daily * Math.max(0, days - pre - r.unpaid)) : 0;
     return {
-      id: s._id, staffId: s.staffId, name: s.name, role: s.role, salary: s.salary, days, daily, ...r,
-      deduction: r.avail ? Math.round(daily * r.unpaid) : 0, base, bonus: a.bonus || 0, advance: a.advance || 0,
+      id: s._id, staffId: s.staffId, name: s.name, role: s.role, salary: s.salary, joinDate: s.joinDate, pre, days, daily, ...r,
+      deduction: r.avail ? Math.round(daily * (r.unpaid + pre)) : 0, base, bonus: a.bonus || 0, advance: a.advance || 0,
       net: base + (a.bonus || 0) - (a.advance || 0)
     };
   });
@@ -113,7 +114,13 @@ app.get('/api/attendance', wrap(async (q, s) => {
 }));
 
 app.put('/api/attendance', wrap(async (q, s) => {
-  const { staff, date } = q.body, ex = await Attendance.findOneAndDelete({ staff, date });
+  const { staff, date } = q.body, st = await Staff.findById(staff);
+  if (!st) throw new Error('স্টাফ পাওয়া যায়নি');
+  const todayStr = new Date(Date.now() + 6 * 3600e3).toISOString().slice(0, 10); // Bangladesh time (UTC+6)
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date || '')) throw new Error('তারিখ সঠিক নয়');
+  if (date > todayStr) throw new Error('ভবিষ্যতের তারিখে ছুটি দেওয়া যাবে না');
+  if (date < st.joinDate.toISOString().slice(0, 10)) throw new Error('যোগদানের আগের তারিখে ছুটি দেওয়া যাবে না');
+  const ex = await Attendance.findOneAndDelete({ staff, date });
   if (!ex) await Attendance.create({ staff, date });
   s.json({ off: !ex });
 }));

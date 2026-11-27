@@ -101,9 +101,12 @@ const FREE = 2, W = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 let offSet = new Set();
 function card(r, i) {
   const m = $('#attMonth').value, [Y, M] = m.split('-').map(Number), first = new Date(Y, M - 1, 1).getDay(), carried = Math.max(0, r.avail - FREE);
+  const join = String(r.joinDate || '').slice(0, 10);
   const days = Array.from({ length: r.days }, (_, k) => {
     const date = `${m}-${pad(k + 1)}`, o = offSet.has(r.id + date);
-    return `<button class="day ${(first + k) % 7 === 5 ? 'wk' : ''} ${o ? 'off' : ''} ${date === today ? 'today' : ''}" data-s="${r.id}" data-d="${date}" aria-label="${esc(r.name)} — ${date}, ${o ? 'off' : 'present'}">${k + 1}</button>`;
+    const st = date < join ? 'pre' : date > today ? 'fut' : o ? 'off' : 'ok', lock = st === 'pre' || st === 'fut';
+    const tip = { pre: 'Before joining', fut: 'Upcoming', off: 'Absent', ok: 'Present' }[st];
+    return `<button class="day ${st} ${date === today ? 'today' : ''}" data-s="${r.id}" data-d="${date}" ${lock ? 'disabled' : ''} title="${tip}" aria-label="${esc(r.name)} — ${date}, ${tip}">${k + 1}</button>`;
   }).join('');
   return `<article class="att-card" data-i="${i}">
   <header><span class="av">${esc((r.name || '?').trim()[0])}</span><div class="nm"><b>${esc(r.name)}</b><div class="sub">${esc(r.staffId)} · ${esc(r.role || 'No role')}</div></div><div class="np"><span>Net pay</span><b>৳ ${money(r.net)}</b></div></header>
@@ -116,7 +119,7 @@ function card(r, i) {
   <dl class="pay">
     <div><dt>Monthly salary</dt><dd>৳ ${money(r.salary)}</dd></div>
     <div><dt>Per day</dt><dd>৳ ${r.daily.toFixed(0)}</dd></div>
-    <div><dt>Deduction</dt><dd class="${r.deduction ? 'bad' : ''}">${r.deduction ? '−৳ ' + money(r.deduction) : '—'}</dd></div>
+    <div><dt>Deduction${r.pre ? `<small>${r.pre} day(s) before joining</small>` : ''}</dt><dd class="${r.deduction ? 'bad' : ''}">${r.deduction ? '−৳ ' + money(r.deduction) : '—'}</dd></div>
     <div><dt>Bonus</dt><dd><input class="n" type="number" min="0" value="${r.bonus}" aria-label="Bonus for ${esc(r.name)}"></dd></div>
     <div><dt>Advance</dt><dd><input class="n" type="number" min="0" value="${r.advance}" aria-label="Advance for ${esc(r.name)}"></dd></div>
   </dl>
@@ -138,11 +141,22 @@ const refreshCard = async el => {
   const i = +el.dataset.i; payRows = await api('/payroll?month=' + $('#attMonth').value);
   el.outerHTML = card(payRows[i], i); paySum();
 };
+const askConfirm = (title, text, yes) => new Promise(res => {
+  const d = $('#cfDlg'); $('#cfTitle').textContent = title; $('#cfText').textContent = text; $('#cfYes').textContent = yes;
+  const done = v => { d.onclose = null; d.close(); res(v); };
+  $('#cfYes').onclick = () => done(true); $('#cfNo').onclick = () => done(false); d.onclose = () => res(false);
+  d.showModal();
+});
 $('#attGrid').onclick = safe(async e => {
-  const c = e.target.closest('.day'); if (!c) return;
-  const r = await api('/attendance', 'PUT', { staff: c.dataset.s, date: c.dataset.d }), k = c.dataset.s + c.dataset.d;
-  r.off ? offSet.add(k) : offSet.delete(k);
-  await refreshCard(c.closest('.att-card'));
+  const c = e.target.closest('.day'); if (!c || c.disabled) return;
+  const { s, d } = c.dataset, el = c.closest('.att-card'), r = payRows[+el.dataset.i];
+  if (d < today) { // আগের তারিখ বদলাতে নিশ্চিতকরণ
+    const label = new Date(d + 'T00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }), absent = c.classList.contains('off');
+    if (!await askConfirm('Edit a past date?', absent ? `${r.name} is marked ABSENT on ${label}. Change to present?` : `Mark ${r.name} ABSENT on ${label}? This will change this month's pay.`, absent ? 'Mark present' : 'Mark absent')) return;
+  }
+  const res = await api('/attendance', 'PUT', { staff: s, date: d }), k = s + d;
+  res.off ? offSet.add(k) : offSet.delete(k);
+  await refreshCard(el);
 });
 $('#attGrid').onchange = safe(async e => {
   if (!e.target.matches('input.n')) return;
