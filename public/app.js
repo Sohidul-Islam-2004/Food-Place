@@ -32,8 +32,8 @@ $$('[data-close]').forEach(b => b.onclick = () => b.closest('dialog').close());
 // ---- tabs ----
 function show(tab) {
   $$('aside nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
-  ['dash', 'staff', 'att', 'pay'].forEach(id => $('#' + id).hidden = id !== tab);
-  ({ dash: loadDash, staff: loadStaff, att: loadAtt, pay: loadPay })[tab]();
+  ['dash', 'staff', 'att'].forEach(id => $('#' + id).hidden = id !== tab);
+  ({ dash: loadDash, staff: loadStaff, att: loadAtt })[tab]();
 }
 $$('aside nav button').forEach(b => b.onclick = () => show(b.dataset.tab));
 
@@ -65,7 +65,7 @@ function renderStaff() {
   const list = staff.filter(s => `${s.name} ${s.staffId} ${s.role || ''}`.toLowerCase().includes(q));
   $('#staffTable').innerHTML = `<thead><tr><th>Staff</th><th>Contact</th><th>Duty</th><th>Salary (৳)</th><th>Join Date</th><th></th></tr></thead><tbody>` +
     (list.map(s => `<tr>
-      <td><div class="who"><div><b>${esc(s.name)}${s.age ? ', ' + esc(s.age) : ''}</b><div class="sub">${esc(s.staffId)} &middot; ${esc(s.role || 'No role')}</div></div></div></td>
+      <td><div class="who"><span class="av">${esc((s.name || "?").trim()[0])}</span><div><b>${esc(s.name)}${s.age ? ', ' + esc(s.age) : ''}</b><div class="sub">${esc(s.staffId)} &middot; ${esc(s.role || 'No role')}</div></div></div></td>
       <td><div>Personal: ${s.phonePersonal ? `<a href="tel:${esc(s.phonePersonal)}">${esc(s.phonePersonal)}</a>` : '-'}</div><div class="sub">Family: ${s.phoneFamily ? `<a href="tel:${esc(s.phoneFamily)}">${esc(s.phoneFamily)}</a>` : '-'}</div></td>
       <td>${esc(s.dutyHour || '-')} hrs/day</td><td>৳ ${money(s.salary)}</td><td>${new Date(s.joinDate).toLocaleDateString('en-GB')}</td>
       <td><button class="small" onclick="window.openForm('${s._id}')">Edit</button><button class="small" onclick="window.setStatus('${s._id}','${arch ? 'active' : 'archived'}')">${arch ? 'Restore' : 'Remove'}</button>${arch ? `<button class="small del" onclick="window.hardDelete('${s._id}')">Delete Permanently</button>` : ''}</td></tr>`).join('')
@@ -95,50 +95,60 @@ window.hardDelete = safe(async id => {
   await api('/staff/' + id + '?hard=1', 'DELETE'); toast('Staff deleted'); loadStaff();
 });
 
-// ---- attendance grid ----
+// ---- attendance + pay: one card per staff ----
 $('#attMonth').value = today.slice(0, 7); $('#attMonth').onchange = () => loadAtt();
+const FREE = 2, W = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+let offSet = new Set();
+function card(r, i) {
+  const m = $('#attMonth').value, [Y, M] = m.split('-').map(Number), first = new Date(Y, M - 1, 1).getDay(), carried = Math.max(0, r.avail - FREE);
+  const days = Array.from({ length: r.days }, (_, k) => {
+    const date = `${m}-${pad(k + 1)}`, o = offSet.has(r.id + date);
+    return `<button class="day ${(first + k) % 7 === 5 ? 'wk' : ''} ${o ? 'off' : ''} ${date === today ? 'today' : ''}" data-s="${r.id}" data-d="${date}" aria-label="${esc(r.name)} — ${date}, ${o ? 'off' : 'present'}">${k + 1}</button>`;
+  }).join('');
+  return `<article class="att-card" data-i="${i}">
+  <header><span class="av">${esc((r.name || '?').trim()[0])}</span><div class="nm"><b>${esc(r.name)}</b><div class="sub">${esc(r.staffId)} · ${esc(r.role || 'No role')}</div></div><div class="np"><span>Net pay</span><b>৳ ${money(r.net)}</b></div></header>
+  <div class="cal">${W.map((w, k) => `<i class="dow ${k === 5 ? 'wk' : ''}">${w}</i>`).join('')}${'<span></span>'.repeat(first)}${days}</div>
+  <div class="leave">
+    <div><b>${r.avail}</b><span>Leave available<small>${FREE} new${carried ? ` + ${carried} saved` : ''}</small></span></div>
+    <div><b>${r.used}</b><span>Used</span></div>
+    <div class="${r.unpaid ? 'bad' : 'ok'}"><b>${r.unpaid || r.carry}</b><span>${r.unpaid ? 'Unpaid days' : 'Saved for next month'}</span></div>
+  </div>
+  <dl class="pay">
+    <div><dt>Monthly salary</dt><dd>৳ ${money(r.salary)}</dd></div>
+    <div><dt>Per day</dt><dd>৳ ${r.daily.toFixed(0)}</dd></div>
+    <div><dt>Deduction</dt><dd class="${r.deduction ? 'bad' : ''}">${r.deduction ? '−৳ ' + money(r.deduction) : '—'}</dd></div>
+    <div><dt>Bonus</dt><dd><input class="n" type="number" min="0" value="${r.bonus}" aria-label="Bonus for ${esc(r.name)}"></dd></div>
+    <div><dt>Advance</dt><dd><input class="n" type="number" min="0" value="${r.advance}" aria-label="Advance for ${esc(r.name)}"></dd></div>
+  </dl>
+  <footer><button class="small" onclick="window.slip(${i})">Payslip</button></footer></article>`;
+}
+const paySum = () => {
+  const t = k => payRows.reduce((a, r) => a + (+r[k] || 0), 0);
+  $('#paySummary').innerHTML = [['Net Payable', '৳ ' + money(t('net')), 'Base ৳ ' + money(t('base'))], ['Deductions', '৳ ' + money(t('deduction')), t('unpaid') + ' unpaid day(s)'], ['Bonus', '৳ ' + money(t('bonus')), ''], ['Advance', '৳ ' + money(t('advance')), 'Recovered this month']]
+    .map(([a, b, c]) => `<div class="stat"><span>${a}</span><b>${b}</b><span class="sub">${c}</span></div>`).join('');
+};
 const loadAtt = safe(async () => {
   const m = $('#attMonth').value; if (!m) return;
-  const [Y, M] = m.split('-').map(Number), days = new Date(Y, M, 0).getDate();
-  $('#attTable').style.setProperty('--att-days', days);
-  const [list, recs] = await Promise.all([api('/staff?status=active'), api('/attendance?month=' + m)]);
-  const off = new Set(recs.map(r => r.staff + r.date));
-  $('#attTable').innerHTML = `<thead><tr><th>Staff</th>${Array.from({ length: days }, (_, i) => `<th>${i + 1}</th>`).join('')}<th>Off days</th></tr></thead><tbody>` +
-    (list.map(s => `<tr><td><b>${esc(s.name)}</b></td>${Array.from({ length: days }, (_, i) => {
-      const date = `${m}-${String(i + 1).padStart(2, '0')}`, o = off.has(s._id + date);
-      return `<td><button class="cell ${o ? 'off' : 'present'} ${date === today ? 'today' : ''}" data-s="${s._id}" data-d="${date}" aria-label="${esc(s.name)} — ${date}, ${o ? 'off' : 'present'}" title="${o ? 'Day off' : 'Present'}">${o ? '×' : '✓'}</button></td>`;
-    }).join('')}<td class="cnt">${recs.filter(r => r.staff === s._id).length}</td></tr>`).join('') || '<tr><td class="empty" style="padding:2rem">আগে স্টাফ যোগ করুন।</td></tr>') + '</tbody>';
-  $('#attTable').closest('.table-wrap').scrollLeft = 0;
+  const [rows, recs] = await Promise.all([api('/payroll?month=' + m), api('/attendance?month=' + m)]);
+  payRows = rows; offSet = new Set(recs.map(r => r.staff + r.date));
+  $('#attGrid').innerHTML = rows.map(card).join('') || '<div class="panel empty" style="padding:2rem">আগে স্টাফ যোগ করুন।</div>';
+  paySum();
 });
-$('#attTable').onclick = safe(async e => {
-  const c = e.target.closest('.cell'); if (!c) return;
-  const r = await api('/attendance', 'PUT', { staff: c.dataset.s, date: c.dataset.d });
-  c.classList.toggle('off', r.off); c.classList.toggle('present', !r.off); c.textContent = r.off ? '×' : '✓';
-  const row = c.closest('tr'); row.querySelector('.cnt').textContent = row.querySelectorAll('.cell.off').length;
+const refreshCard = async el => {
+  const i = +el.dataset.i; payRows = await api('/payroll?month=' + $('#attMonth').value);
+  el.outerHTML = card(payRows[i], i); paySum();
+};
+$('#attGrid').onclick = safe(async e => {
+  const c = e.target.closest('.day'); if (!c) return;
+  const r = await api('/attendance', 'PUT', { staff: c.dataset.s, date: c.dataset.d }), k = c.dataset.s + c.dataset.d;
+  r.off ? offSet.add(k) : offSet.delete(k);
+  await refreshCard(c.closest('.att-card'));
 });
-
-// ---- payroll ----
-$('#payMonth').value = today.slice(0, 7); $('#payMonth').onchange = () => loadPay();
-const loadPay = safe(async () => {
-  const m = $('#payMonth').value; if (!m) return;
-  payRows = await api('/payroll?month=' + m);
-  $('#payTable').innerHTML = `<thead><tr><th>Staff</th><th>Role</th><th>Monthly Salary</th><th>Daily Rate</th><th>Days Off</th><th>Free Days Left</th><th>Unpaid Days</th><th>Carryover</th><th>Bonus</th><th>Advance</th><th>Net Pay</th><th></th></tr></thead><tbody>` +
-    payRows.map((r, i) => `<tr><td data-label="Staff"><b>${esc(r.name)}</b><div class="sub">${esc(r.staffId)}<span class="pay-card-role"> · ${esc(r.role || '-')}</span></div></td><td data-label="Role">${esc(r.role || '-')}</td><td data-label="Monthly Salary">৳ ${money(r.salary)}</td><td data-label="Daily Rate">৳ ${r.daily.toFixed(2)}</td><td data-label="Days Off">${r.used}</td><td data-label="Free Days Left">${r.avail}</td>
-      <td class="${r.unpaid ? 'bad' : ''}" data-label="Unpaid Days">${r.unpaid}</td><td data-label="Carryover">${r.carry}</td>
-      <td data-label="Bonus"><input class="n" type="number" min="0" value="${r.bonus}" data-i="${i}" data-k="bonus" aria-label="Bonus for ${esc(r.name)}"></td><td data-label="Advance"><input class="n" type="number" min="0" value="${r.advance}" data-i="${i}" data-k="advance" aria-label="Advance for ${esc(r.name)}"></td>
-      <td class="net" id="net${i}" data-label="Net Pay">৳ ${money(r.net)}</td><td data-label="Payslip"><button class="small" onclick="window.slip(${i})">Payslip</button></td></tr>`).join('') +
-    `</tbody><tfoot><tr><td colspan="10"><b>Total Payroll</b></td><td class="net" id="total" colspan="2">৳ ${money(payRows.reduce((a, r) => a + r.net, 0))}</td></tr></tfoot>`;
-});
-$('#payTable').onchange = safe(async e => {
-  const i = e.target.dataset.i; if (i === undefined) return;
-  const r = payRows[i], row = e.target.closest('tr'), [b, a] = row.querySelectorAll('input.n');
-  const res = await api('/adjust', 'PUT', { staff: r.id, month: $('#payMonth').value, bonus: b.value, advance: a.value });
-  r.bonus = +b.value || 0;
-  r.advance = +a.value || 0;
-  r.net = typeof res.net === 'number' ? res.net : r.salary - (r.deduction || 0) + r.bonus - r.advance;
-  $('#net' + i).textContent = '৳ ' + money(r.net);
-  $('#total').textContent = '৳ ' + money(payRows.reduce((s, x) => s + x.net, 0));
-  toast('Saved');
+$('#attGrid').onchange = safe(async e => {
+  if (!e.target.matches('input.n')) return;
+  const el = e.target.closest('.att-card'), [b, a] = el.querySelectorAll('input.n');
+  await api('/adjust', 'PUT', { staff: payRows[+el.dataset.i].id, month: $('#attMonth').value, bonus: b.value, advance: a.value });
+  await refreshCard(el); toast('Saved');
 });
 $('#csvBtn').onclick = () => {
   if (!payRows.length) return toast('No payroll data to export');
@@ -147,12 +157,12 @@ $('#csvBtn').onclick = () => {
   const csv = rows.map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\r\n');
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' }));
-  a.download = `payroll-${$('#payMonth').value}.csv`;
+  a.download = `payroll-${$('#attMonth').value}.csv`;
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 };
 window.slip = i => {
-  const r = payRows[i], m = $('#payMonth').value, w = window.open('', '_blank');
+  const r = payRows[i], m = $('#attMonth').value, w = window.open('', '_blank');
   if (!w) return toast('Allow pop-ups to print payslips');
   const line = (k, v, c = '') => `<tr><td>${k}</td><td style="text-align:right" class="${c}">${v}</td></tr>`;
   w.document.write(`<!doctype html><html lang="bn"><head><meta charset="utf-8">

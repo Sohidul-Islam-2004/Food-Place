@@ -24,7 +24,6 @@
       <button data-tab="dash" class="on"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect></svg><span>Dashboard</span></button>
       <button data-tab="staff"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20v-1.2A5.3 5.3 0 0 1 7.8 13h2.4a5.3 5.3 0 0 1 5.3 5.3V20"></path><path d="M16 4.8a3.5 3.5 0 0 1 0 6.4M18 13.4a5.3 5.3 0 0 1 3.5 5V20"></path></svg><span>Staff</span></button>
       <button data-tab="att"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M16 3v4M8 3v4M3 10h18M8 14h2M14 14h2M8 17h2"></path></svg><span>Attendance</span></button>
-      <button data-tab="pay"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="15" rx="2"></rect><path d="M3 9h18M7 15h4"></path><circle cx="17" cy="15" r="1"></circle></svg><span>Payroll</span></button>
     </nav>
     <div class="side-foot">
       <button class="link" id="pwBtn">Change Password</button>
@@ -40,35 +39,37 @@
       <div class="panel scroll"><div class="table-wrap"><table id="staffTable"></table></div></div>
     </section>
     <section id="att" hidden>
-      <div class="head"><div class="title-block"><h2>Attendance</h2><p class="page-caption">Track days off for each staff member.</p></div><div class="tools attendance-tools"><input type="month" id="attMonth" aria-label="Attendance month"></div></div>
-      <p class="hint">সবাইকে ডিফল্টভাবে উপস্থিত ধরা হয়। ছুটি চিহ্নিত করতে তারিখে চাপ দিন; বাতিল করতে আবার চাপ দিন।</p>
+      <div class="head"><div class="title-block"><h2>Attendance &amp; Pay</h2><p class="page-caption">Each staff member's leave calendar and monthly pay in one place.</p></div><div class="tools attendance-tools"><input type="month" id="attMonth" aria-label="Month"><button class="btn ghost" id="csvBtn">Export CSV</button></div></div>
+      <div id="paySummary" class="stats"></div>
+      <p class="hint">প্রতি মাসে ২টি বেতনসহ ছুটি; অব্যবহৃত ছুটি পরের মাসে জমা হয়। ছুটি দিতে তারিখে চাপ দিন, বাতিল করতে আবার চাপ দিন। জমা ছুটি শেষ হলে অতিরিক্ত প্রতি ছুটিতে এক দিনের বেতন কাটা হয়।</p>
       <div class="legend" aria-label="Attendance legend"><span><i class="legend-dot present"></i>Present</span><span><i class="legend-dot off"></i>Day off</span><span><i class="legend-dot today"></i>Today</span></div>
-      <div class="panel scroll"><div class="table-wrap"><table id="attTable" class="grid"></table></div></div>
-    </section>
-    <section id="pay" hidden>
-      <div class="head"><div class="title-block"><h2>Payroll</h2><p class="page-caption">Review monthly pay, leave, and adjustments.</p></div><div class="tools payroll-tools"><input type="month" id="payMonth" aria-label="Payroll month"><button class="btn ghost" id="csvBtn">Export CSV</button></div></div>
-      <p class="hint">দৈনিক বেতন = মাসিক বেতন ÷ মাসের দিন। প্রতি মাসে ২টি বেতনসহ ছুটি; অব্যবহৃত ছুটি পরের মাসে যোগ হয়। অতিরিক্ত ছুটিতে এক দিনের বেতন কাটা হয়।</p>
-      <div class="panel scroll"><div class="table-wrap"><table id="payTable"></table></div></div>
+      <div id="attGrid" class="att-cards"></div>
     </section>
   </main>
 </div>
 
 <dialog id="dlg">
   <form id="form" method="dialog">
-    <h3 id="dlgTitle">Add Staff</h3>
-    <div class="fields">
-      <label>Full Name<input name="name" required></label>
-      <label>Role<input name="role"></label>
-      <label>Age<input name="age" type="number" min="14" max="90"></label>
-      <label>Daily Duty (hours)<input name="dutyHour" type="number" min="1" max="24"></label>
-      <label>Monthly Salary<input name="salary" type="number" min="0" required></label>
-      <label>Join Date<input name="joinDate" type="date"></label>
-      <label>Personal Phone<input name="phonePersonal" type="tel"></label>
-      <label>Family Phone<input name="phoneFamily" type="tel"></label>
-      <label class="wide">Present Address<textarea name="presentAddress" rows="2"></textarea></label>
-      <label class="wide">Permanent Address<textarea name="permanentAddress" rows="2"></textarea></label>
+    <header class="dlg-head"><h3 id="dlgTitle">Add Staff</h3><button type="button" class="x" data-close aria-label="Close">×</button></header>
+    <div class="dlg-body">
+      <section class="sec"><h4>Basic info</h4><div class="fields">
+        <label class="wide">Full Name<input name="name" placeholder="e.g. Rahim Uddin" required></label>
+        <label>Role<input name="role" placeholder="e.g. Cashier"></label>
+        <label>Age<input name="age" type="number" min="14" max="90"></label>
+      </div></section>
+      <section class="sec"><h4>Job &amp; salary</h4><div class="fields">
+        <label>Monthly Salary (৳)<input name="salary" type="number" min="0" required></label>
+        <label>Daily Duty (hours)<input name="dutyHour" type="number" min="1" max="24"></label>
+        <label>Join Date<input name="joinDate" type="date"></label>
+      </div></section>
+      <section class="sec"><h4>Contact</h4><div class="fields">
+        <label>Personal Phone<input name="phonePersonal" type="tel" placeholder="01XXXXXXXXX"></label>
+        <label>Family Phone<input name="phoneFamily" type="tel" placeholder="01XXXXXXXXX"></label>
+        <label class="wide">Present Address<textarea name="presentAddress" rows="2"></textarea></label>
+        <label class="wide">Permanent Address<textarea name="permanentAddress" rows="2"></textarea></label>
+      </div></section>
     </div>
-    <div class="actions"><button type="button" class="link" data-close>Cancel</button><button class="btn">Save</button></div>
+    <div class="actions"><button type="button" class="btn ghost" data-close>Cancel</button><button class="btn">Save Staff</button></div>
   </form>
 </dialog>
 <dialog id="pwDlg">
