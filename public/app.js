@@ -1,6 +1,6 @@
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const money = n => Number(n || 0).toLocaleString('bn-BD', { maximumFractionDigits: 0 }); // বাংলা সংখ্যা ফরম্যাট
+const money = n => Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 0 });
 const pad = n => String(n).padStart(2, '0');
 const localDate = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 const today = localDate(new Date());
@@ -41,7 +41,7 @@ $$('aside nav button').forEach(b => b.onclick = () => show(b.dataset.tab));
 const loadDash = async () => {
   try {
     const d = await api('/dashboard');
-    $('#dash').innerHTML = `<div class="head"><h2>ড্যাশবোর্ড</h2><span class="sub">${new Date().toLocaleDateString('bn-BD', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span></div>
+    $('#dash').innerHTML = `<div class="head"><h2>ড্যাশবোর্ড</h2><span class="sub">${new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span></div>
     <div class="stats">
       <div class="stat"><span>সক্রিয় স্টাফ</span><b>${d.total}</b></div>
       <div class="stat"><span>আজ উপস্থিত</span><b>${d.total - d.off.length}</b></div>
@@ -63,18 +63,18 @@ const loadStaff = safe(async () => { staff = await api('/staff?status=' + $('#st
 function renderStaff() {
   const q = $('#q').value.toLowerCase(), arch = $('#stFilter').value === 'archived';
   const list = staff.filter(s => `${s.name} ${s.staffId} ${s.role || ''}`.toLowerCase().includes(q));
-  $('#staffTable').innerHTML = `<thead><tr><th>স্টাফ</th><th>যোগাযোগ</th><th>ডিউটি</th><th>বেতন (৳)</th><th>যোগদান</th><th></th></tr></thead><tbody>` +
+  $('#staffTable').innerHTML = `<thead><tr><th>Staff</th><th>Contact</th><th>Duty</th><th>Salary (৳)</th><th>Join Date</th><th></th></tr></thead><tbody>` +
     (list.map(s => `<tr>
-      <td><div class="who"><span class="av">${esc(s.name.split(' ').filter(Boolean).map(w => w[0]).slice(0, 2).join('').toUpperCase())}</span><div><b>${esc(s.name)}${s.age ? ', ' + esc(s.age) : ''}</b><div class="sub">${esc(s.staffId)} &middot; ${esc(s.role || 'পদবি নেই')}</div></div></div></td>
-      <td>${s.phonePersonal ? `<a href="tel:${esc(s.phonePersonal)}">${esc(s.phonePersonal)}</a>` : '-'}<div class="sub">পরিবার: ${s.phoneFamily ? `<a href="tel:${esc(s.phoneFamily)}">${esc(s.phoneFamily)}</a>` : '-'}</div></td>
-      <td>${esc(s.dutyHour || '-')} ঘণ্টা/দিন</td><td>${money(s.salary)}</td><td>${new Date(s.joinDate).toLocaleDateString('bn-BD')}</td>
-      <td><button class="small" onclick="window.openForm('${s._id}')">সম্পাদনা</button><button class="small" onclick="window.setStatus('${s._id}','${arch ? 'active' : 'archived'}')">${arch ? 'পুনরুদ্ধার' : 'সরান'}</button>${arch ? `<button class="small del" onclick="window.hardDelete('${s._id}')">স্থায়ীভাবে মুছুন</button>` : ''}</td></tr>`).join('')
-      || `<tr><td colspan="6" class="empty" style="padding:2rem;text-align:center">${arch ? 'কোনো আর্কাইভকৃত স্টাফ নেই।' : 'এখনো কোনো স্টাফ নেই। প্রথম স্টাফ যোগ করুন।'}</td></tr>`) + '</tbody>';
+      <td><div class="who"><span class="av">${esc(s.name.split(' ').filter(Boolean).map(w => w[0]).slice(0, 2).join('').toUpperCase())}</span><div><b>${esc(s.name)}${s.age ? ', ' + esc(s.age) : ''}</b><div class="sub">${esc(s.staffId)} &middot; ${esc(s.role || 'No role')}</div></div></div></td>
+      <td>${s.phonePersonal ? `<a href="tel:${esc(s.phonePersonal)}">${esc(s.phonePersonal)}</a>` : '-'}<div class="sub">Family: ${s.phoneFamily ? `<a href="tel:${esc(s.phoneFamily)}">${esc(s.phoneFamily)}</a>` : '-'}</div></td>
+      <td>${esc(s.dutyHour || '-')} hrs/day</td><td>${money(s.salary)}</td><td>${new Date(s.joinDate).toLocaleDateString('en-GB')}</td>
+      <td><button class="small" onclick="window.openForm('${s._id}')">Edit</button><button class="small" onclick="window.setStatus('${s._id}','${arch ? 'active' : 'archived'}')">${arch ? 'Restore' : 'Remove'}</button>${arch ? `<button class="small del" onclick="window.hardDelete('${s._id}')">Delete Permanently</button>` : ''}</td></tr>`).join('')
+      || `<tr><td colspan="6" class="empty" style="padding:2rem;text-align:center">${arch ? 'No archived staff.' : 'No staff yet. Add the first staff member.'}</td></tr>`) + '</tbody>';
 }
 $('#q').oninput = renderStaff; $('#stFilter').onchange = loadStaff; $('#addBtn').onclick = () => openForm();
 window.openForm = id => {
   editId = id || null; const f = $('#form'); f.reset();
-  $('#dlgTitle').textContent = id ? 'স্টাফ সম্পাদনা' : 'স্টাফ যোগ করুন';
+  $('#dlgTitle').textContent = id ? 'Edit Staff' : 'Add Staff';
   const s = staff.find(x => x._id === id) || {};
   [...f.elements].forEach(el => { if (el.name) el.value = el.name === 'joinDate' ? String(s.joinDate || today).slice(0, 10) : (s[el.name] ?? ''); });
   $('#dlg').showModal();
@@ -100,6 +100,7 @@ $('#attMonth').value = today.slice(0, 7); $('#attMonth').onchange = () => loadAt
 const loadAtt = safe(async () => {
   const m = $('#attMonth').value; if (!m) return;
   const [Y, M] = m.split('-').map(Number), days = new Date(Y, M, 0).getDate();
+  $('#attTable').style.setProperty('--att-days', days);
   const [list, recs] = await Promise.all([api('/staff?status=active'), api('/attendance?month=' + m)]);
   const off = new Set(recs.map(r => r.staff + r.date));
   $('#attTable').innerHTML = `<thead><tr><th>স্টাফ</th>${Array.from({ length: days }, (_, i) => `<th>${i + 1}</th>`).join('')}<th>ছুটি</th></tr></thead><tbody>` +
