@@ -9,7 +9,7 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const jwt = require('jsonwebtoken');
 
-const { Admin, Staff, Attendance, Adjust } = require('./schema');
+const { Admin, Staff, Attendance, Adjust, Payment } = require('./schema');
 
 const app = express();
 const SECRET = process.env.JWT_SECRET || 'dev-secret-change-me';
@@ -48,11 +48,12 @@ async function calculatePayroll(ym) {
       carry = r.carry; if (++m > 12) { m = 1; y++; }
     }
     const a = adj.find(x => String(x.staff) === String(s._id)) || {}, daily = s.salary / days;
+    const inMonth = r !== null; // এই মাসে স্টাফ যোগ দিয়েছিল কি না
     r = r || { avail: 0, used: 0, unpaid: 0, carry: 0 };
     const pre = (j.getUTCFullYear() === Y && j.getUTCMonth() + 1 === M) ? j.getUTCDate() - 1 : 0; // যোগদানের আগের দিন
     const base = r.avail ? Math.round(daily * Math.max(0, days - pre - r.unpaid)) : 0;
     return {
-      id: s._id, staffId: s.staffId, name: s.name, role: s.role, salary: s.salary, joinDate: s.joinDate, pre, days, daily, ...r,
+      id: s._id, staffId: s.staffId, name: s.name, role: s.role, salary: s.salary, joinDate: s.joinDate, inMonth, pre, days, daily, ...r,
       deduction: r.avail ? Math.round(daily * (r.unpaid + pre)) : 0, base, bonus: a.bonus || 0, advance: a.advance || 0,
       net: base + (a.bonus || 0) - (a.advance || 0)
     };
@@ -125,7 +126,40 @@ app.put('/api/attendance', wrap(async (q, s) => {
   s.json({ off: !ex });
 }));
 
-app.get('/api/payroll', wrap(async (q, s) => s.json(await calculatePayroll(q.query.month))));
+const bdNow = () => new Date(Date.now() + 6 * 3600e3); // Bangladesh time (UTC+6)
+const validYm = m => /^\d{4}-\d{2}$/.test(m || '');
+const withPaid = async ym => {
+  const [rows, pays] = await Promise.all([calculatePayroll(ym), Payment.find({ month: ym })]);
+  const by = Object.fromEntries(pays.map(p => [String(p.staff), p]));
+  return rows.map(r => { const p = by[String(r.id)]; return { ...r, paid: p ? { amount: p.amount, paidAt: p.paidAt } : null }; });
+};
+app.get('/api/payroll', wrap(async (q, s) => {
+  if (!validYm(q.query.month)) throw new Error('মাস সঠিক নয়');
+  s.json(await withPaid(q.query.month));
+}));
+
+// ---- salary payments (monthly record) ----
+const checkPayMonth = m => {
+  if (!validYm(m)) throw new Error('মাস সঠিক নয়');
+  if (m > bdNow().toISOString().slice(0, 7)) throw new Error('ভবিষ্যতের মাসের বেতন দেওয়া যাবে না');
+};
+app.post('/api/payment', wrap(async (q, s) => {
+  const { staff, month } = q.body; checkPayMonth(month);
+  const row = (await calculatePayroll(month)).find(r => String(r.id) === String(staff));
+  if (!row || !row.inMonth) throw new Error('এই মাসে বেতন প্রযোজ্য নয়');
+  const p = await Payment.findOneAndUpdate({ staff, month }, { amount: row.net, paidAt: new Date() }, { upsert: true, new: true });
+  s.json({ amount: p.amount, paidAt: p.paidAt });
+}));
+app.post('/api/payment/all', wrap(async (q, s) => {
+  const { month } = q.body; checkPayMonth(month);
+  const rows = (await withPaid(month)).filter(r => r.inMonth && !r.paid);
+  if (rows.length) await Payment.insertMany(rows.map(r => ({ staff: r.id, month, amount: r.net })));
+  s.json({ count: rows.length });
+}));
+app.delete('/api/payment', wrap(async (q, s) => {
+  await Payment.deleteOne({ staff: q.query.staff, month: q.query.month });
+  s.json({ ok: true });
+}));
 
 app.put('/api/adjust', wrap(async (q, s) => {
   const { staff, month, bonus, advance } = q.body;
@@ -133,19 +167,26 @@ app.put('/api/adjust', wrap(async (q, s) => {
 }));
 
 app.get('/api/dashboard', wrap(async (q, s) => {
-  const d = new Date();
-  const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  const ym = today.slice(0, 7);
+  const now = bdNow(), today = now.toISOString().slice(0, 10), ym = today.slice(0, 7);
+  const prev = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1)).toISOString().slice(0, 7);
   const staff = await Staff.find({ status: 'active' });
   const offToday = await Attendance.find({ date: today }).populate('staff', 'name role status');
   const pay = await calculatePayroll(ym);
+  const prevRows = (await withPaid(prev)).filter(r => r.inMonth);
 
   s.json({
     total: staff.length,
     off: offToday.filter(o => o.staff?.status === 'active').map(o => o.staff),
     payroll: pay.reduce((a, r) => a + r.net, 0),
     monthlyBase: staff.reduce((a, r) => a + r.salary, 0),
-    topBalance: pay.sort((a, b) => b.carry - a.carry).slice(0, 5)
+    topBalance: pay.sort((a, b) => b.carry - a.carry).slice(0, 5),
+    // আগের মাসের বেতন (চলতি মাসের ১০ তারিখে দেওয়া হয়)
+    due: {
+      month: prev, dueDate: ym + '-10', count: prevRows.length,
+      total: prevRows.reduce((a, r) => a + r.net, 0),
+      paidCount: prevRows.filter(r => r.paid).length,
+      paidAmount: prevRows.reduce((a, r) => a + (r.paid ? r.paid.amount : 0), 0)
+    }
   });
 }));
 

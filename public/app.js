@@ -38,16 +38,24 @@ function show(tab) {
 $$('aside nav button').forEach(b => b.onclick = () => show(b.dataset.tab));
 
 // ---- dashboard ----
+function gotoPay(m) { $('#attMonth').value = m; show('att'); }
 const loadDash = async () => {
   try {
     const d = await api('/dashboard'), hr = new Date().getHours(), hi = hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening';
-    const present = d.total - d.off.length, pct = d.total ? Math.round(present / d.total * 100) : 0, bal = d.topBalance.filter(r => r.carry);
+    const present = d.total - d.off.length, pct = d.total ? Math.round(present / d.total * 100) : 0, bal = d.topBalance.filter(r => r.carry), u = d.due;
+    const left = Math.round((new Date(u.dueDate + 'T00:00') - new Date(today + 'T00:00')) / 864e5), all = u.count > 0 && u.paidCount === u.count;
+    const st = all ? ['ok', 'All paid'] : left < 0 ? ['late', `Overdue by ${-left} day${left === -1 ? '' : 's'}`] : left === 0 ? ['soon', 'Due today'] : ['soon', `Due in ${left} day${left === 1 ? '' : 's'}`];
+    const np = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 10);
     $('#dash').innerHTML = `<div class="head"><div class="title-block"><h2>${hi}</h2><p class="page-caption">Here is how your team looks today.</p></div><span class="date-chip">${new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' })}</span></div>
+    ${u.count ? `<div class="due ${st[0]}">
+      <div><span class="lbl">Salary due · ${monthName(u.month)}</span><b class="amt">৳ ${money(u.total)}</b><span class="state">${st[1]}</span><span class="sub"> · pay date ${fmtD(u.dueDate)}</span></div>
+      <div><div class="bar"><i style="width:${Math.round(u.paidCount / u.count * 100)}%"></i></div><span class="sub">${u.paidCount} of ${u.count} staff paid · ৳ ${money(u.paidAmount)} paid</span></div>
+      <button class="btn" onclick="gotoPay('${u.month}')">${all ? 'View' : 'Review & pay'}</button></div>` : ''}
     <div class="stats">
       <div class="stat s-blue"><span>Active staff</span><b>${d.total}</b><span class="sub">on your team</span></div>
       <div class="stat s-green"><span>Present today</span><b>${present}</b><div class="bar"><i style="width:${pct}%"></i></div><span class="sub">${pct}% of the team</span></div>
       <div class="stat s-red"><span>Absent today</span><b>${d.off.length}</b><span class="sub">${d.off.length ? 'marked absent' : 'full attendance'}</span></div>
-      <div class="stat s-amber"><span>Payroll this month</span><b>৳ ${money(d.payroll)}</b><span class="sub">Base salary ৳ ${money(d.monthlyBase)}</span></div>
+      <div class="stat s-amber"><span>This month so far</span><b>৳ ${money(d.payroll)}</b><span class="sub">Pay date ${fmtD(np)} · base ৳ ${money(d.monthlyBase)}</span></div>
     </div>
     <div class="qa"><button class="btn" onclick="show('att')">Mark attendance</button><button class="btn ghost" onclick="show('staff');openForm()">Add staff</button></div>
     <div class="two">
@@ -113,6 +121,8 @@ window.setStatus = safe(async (id, status) => {
 
 // ---- attendance + pay: one card per staff ----
 $('#attMonth').value = today.slice(0, 7); $('#attMonth').onchange = () => loadAtt();
+const shiftMonth = n => { const [Y, M] = $('#attMonth').value.split('-').map(Number), d = new Date(Y, M - 1 + n, 1); $('#attMonth').value = `${d.getFullYear()}-${pad(d.getMonth() + 1)}`; loadAtt(); };
+$('#mPrev').onclick = () => shiftMonth(-1); $('#mNext').onclick = () => shiftMonth(1);
 const FREE = 2, W = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 let offSet = new Set();
 function card(r, i) {
@@ -124,6 +134,9 @@ function card(r, i) {
     const tip = { pre: 'Before joining', fut: 'Upcoming', off: 'Absent', ok: 'Present' }[st];
     return `<button class="day ${st} ${date === today ? 'today' : ''}" data-s="${r.id}" data-d="${date}" ${lock ? 'disabled' : ''} title="${tip}" aria-label="${esc(r.name)} — ${date}, ${tip}">${k + 1}</button>`;
   }).join('');
+  const pd = r.paid
+    ? `<span class="paid-chip">Paid · ${fmtD(r.paid.paidAt)} · ৳ ${money(r.paid.amount)}${r.paid.amount !== r.net ? ' <em>(pay changed since)</em>' : ''}</span><button class="small" data-unpay="1">Undo</button>`
+    : `<button class="btn sm" data-pay="1">Mark paid</button>`;
   return `<article class="att-card" data-i="${i}">
   <header><div class="nm"><b>${esc(r.name)}</b><div class="sub">${esc(r.role || 'No role')}</div></div><div class="np"><span>Net pay</span><b>৳ ${money(r.net)}</b></div></header>
   <div class="cal">${W.map((w, k) => `<i class="dow ${k === 5 ? 'wk' : ''}">${w}</i>`).join('')}${'<span></span>'.repeat(first)}${days}</div>
@@ -139,22 +152,26 @@ function card(r, i) {
     <div><dt>Bonus</dt><dd><input class="n" type="number" min="0" value="${r.bonus}" aria-label="Bonus for ${esc(r.name)}"></dd></div>
     <div><dt>Advance</dt><dd><input class="n" type="number" min="0" value="${r.advance}" aria-label="Advance for ${esc(r.name)}"></dd></div>
   </dl>
-  <footer><button class="small" onclick="window.slip(${i})">Payslip</button></footer></article>`;
+  <footer><div class="pst">${pd}</div><button class="small" onclick="window.slip(${i})">Payslip</button></footer></article>`;
 }
+const monthName = m => new Date(m + '-01T00:00').toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+const payDate = m => { const [Y, M] = m.split('-').map(Number); return fmtD(new Date(Y, M, 10)); };
 const paySum = () => {
-  const t = k => payRows.reduce((a, r) => a + (+r[k] || 0), 0);
-  $('#paySummary').innerHTML = [['Net Payable', '৳ ' + money(t('net')), 'Base ৳ ' + money(t('base'))], ['Deductions', '৳ ' + money(t('deduction')), t('unpaid') + ' unpaid day(s)'], ['Bonus', '৳ ' + money(t('bonus')), ''], ['Advance', '৳ ' + money(t('advance')), 'Recovered this month']]
-    .map(([a, b, c]) => `<div class="stat"><span>${a}</span><b>${b}</b><span class="sub">${c}</span></div>`).join('');
+  const t = k => payRows.reduce((a, r) => a + (+r[k] || 0), 0), paid = payRows.filter(r => r.paid), m = $('#attMonth').value;
+  const paidAmt = paid.reduce((a, r) => a + r.paid.amount, 0), rem = payRows.filter(r => !r.paid).reduce((a, r) => a + r.net, 0);
+  $('#paySummary').innerHTML = [['s-blue', 'Net payable', '৳ ' + money(t('net')), 'Pay date ' + payDate(m)], ['s-green', 'Paid', '৳ ' + money(paidAmt), `${paid.length} of ${payRows.length} staff`], ['s-amber', 'Remaining', '৳ ' + money(rem), rem ? 'Still to pay' : 'All settled'], ['s-red', 'Deductions', '৳ ' + money(t('deduction')), `Bonus ৳ ${money(t('bonus'))} · Advance ৳ ${money(t('advance'))}`]]
+    .map(([c, a, b, s]) => `<div class="stat ${c}"><span>${a}</span><b>${b}</b><span class="sub">${s}</span></div>`).join('');
 };
 const loadAtt = safe(async () => {
   const m = $('#attMonth').value; if (!m) return;
+  $('#mNext').disabled = m >= today.slice(0, 7);
   const [rows, recs] = await Promise.all([api('/payroll?month=' + m), api('/attendance?month=' + m)]);
-  payRows = rows; offSet = new Set(recs.map(r => r.staff + r.date));
+  payRows = rows.filter(r => r.inMonth); offSet = new Set(recs.map(r => r.staff + r.date));
   $('#attGrid').innerHTML = rows.map(card).join('') || '<div class="panel empty" style="padding:2rem">আগে স্টাফ যোগ করুন।</div>';
   paySum();
 });
 const refreshCard = async el => {
-  const i = +el.dataset.i; payRows = await api('/payroll?month=' + $('#attMonth').value);
+  const i = +el.dataset.i; payRows = (await api('/payroll?month=' + $('#attMonth').value)).filter(r => r.inMonth);
   el.outerHTML = card(payRows[i], i); paySum();
 };
 const askConfirm = (title, text, yes) => new Promise(res => {
@@ -164,15 +181,33 @@ const askConfirm = (title, text, yes) => new Promise(res => {
   d.showModal();
 });
 $('#attGrid').onclick = safe(async e => {
+  const pb = e.target.closest('[data-pay]'), ub = e.target.closest('[data-unpay]');
+  if (pb || ub) {
+    const el = e.target.closest('.att-card'), r = payRows[+el.dataset.i], m = $('#attMonth').value;
+    if (pb) {
+      if (!await askConfirm('Mark as paid?', `Pay ৳ ${money(r.net)} to ${r.name} for ${monthName(m)}?`, 'Mark paid')) return;
+      await api('/payment', 'POST', { staff: r.id, month: m }); toast('Marked as paid');
+    } else {
+      if (!await askConfirm('Undo payment?', `Remove the paid mark for ${r.name} (${monthName(m)})?`, 'Undo payment')) return;
+      await api(`/payment?staff=${r.id}&month=${m}`, 'DELETE');
+    }
+    return refreshCard(el);
+  }
   const c = e.target.closest('.day'); if (!c || c.disabled) return;
   const { s, d } = c.dataset, el = c.closest('.att-card'), r = payRows[+el.dataset.i];
   if (d < today) { // আগের তারিখ বদলাতে নিশ্চিতকরণ
     const label = new Date(d + 'T00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }), absent = c.classList.contains('off');
-    if (!await askConfirm('Edit a past date?', absent ? `${r.name} is marked ABSENT on ${label}. Change to present?` : `Mark ${r.name} ABSENT on ${label}? This will change this month's pay.`, absent ? 'Mark present' : 'Mark absent')) return;
+    if (!await askConfirm('Edit a past date?', absent ? `${r.name} is marked ABSENT on ${label}. Change to present?${r.paid ? ' Salary is already marked paid!' : ''}` : `Mark ${r.name} ABSENT on ${label}? This will change this month's pay.${r.paid ? ' Salary is already marked paid!' : ''}`, absent ? 'Mark present' : 'Mark absent')) return;
   }
   const res = await api('/attendance', 'PUT', { staff: s, date: d }), k = s + d;
   res.off ? offSet.add(k) : offSet.delete(k);
   await refreshCard(el);
+});
+$('#payAll').onclick = safe(async () => {
+  const m = $('#attMonth').value, todo = payRows.filter(r => !r.paid);
+  if (!todo.length) return toast('Everyone is already paid');
+  if (!await askConfirm('Mark all as paid?', `${todo.length} staff · ৳ ${money(todo.reduce((a, r) => a + r.net, 0))} for ${monthName(m)}.`, 'Mark all paid')) return;
+  await api('/payment/all', 'POST', { month: m }); toast('All marked as paid'); loadAtt();
 });
 $('#attGrid').onchange = safe(async e => {
   if (!e.target.matches('input.n')) return;

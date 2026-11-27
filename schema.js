@@ -52,4 +52,14 @@ const adjSchema = new Schema({
 adjSchema.index({ staff: 1, month: 1 }, { unique: true });
 const Adjust = mongoose.model('Adjust', adjSchema);
 
-module.exports = { Admin, Staff, Attendance, Adjust };
+// মাসিক বেতন পরিশোধের রেকর্ড (পরিশোধের সময়ের পরিমাণ সংরক্ষিত থাকে)
+const paySchema = new Schema({
+  staff: { type: Schema.Types.ObjectId, ref: 'Staff', required: true },
+  month: { type: String, required: true },
+  amount: { type: Number, required: true },
+  paidAt: { type: Date, default: Date.now }
+});
+paySchema.index({ staff: 1, month: 1 }, { unique: true });
+const Payment = mongoose.model('Payment', paySchema);
+
+module.exports = { Admin, Staff, Attendance, Adjust, Payment };

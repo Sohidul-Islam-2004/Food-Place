@@ -39,9 +39,9 @@
       <div id="staffGrid" class="staff-cards"></div>
     </section>
     <section id="att" hidden>
-      <div class="head"><div class="title-block"><h2>Attendance &amp; Pay</h2><p class="page-caption">Each staff member's leave calendar and monthly pay in one place.</p></div><div class="tools attendance-tools"><input type="month" id="attMonth" aria-label="Month"><button class="btn ghost" id="csvBtn">Export CSV</button></div></div>
+      <div class="head"><div class="title-block"><h2>Attendance &amp; Pay</h2><p class="page-caption">Each staff member's leave calendar and monthly pay in one place.</p></div><div class="tools attendance-tools"><div class="monthnav"><button class="btn ghost" id="mPrev" aria-label="Previous month">‹</button><input type="month" id="attMonth" aria-label="Month"><button class="btn ghost" id="mNext" aria-label="Next month">›</button></div><button class="btn" id="payAll">Mark all paid</button><button class="btn ghost" id="csvBtn">Export CSV</button></div></div>
       <div id="paySummary" class="stats"></div>
-      <p class="hint">প্রতি মাসে ২টি বেতনসহ ছুটি; অব্যবহৃত ছুটি পরের মাসে জমা হয়। শুধু অনুপস্থিত দিনে চাপ দিন। যোগদানের আগের আর ভবিষ্যতের তারিখ বদলানো যায় না; আগের তারিখ বদলাতে নিশ্চিত করতে হবে।</p>
+      <p class="hint">একটি মাসের বেতন পরের মাসের ১০ তারিখে দেওয়া হয়। বেতন দিলে “Mark paid” চাপুন, মাসের রেকর্ড থেকে যাবে। প্রতি মাসে ২টি বেতনসহ ছুটি, অব্যবহৃত ছুটি জমা হয়। শুধু অনুপস্থিত দিনে চাপ দিন; যোগদানের আগের ও ভবিষ্যতের তারিখ বদলানো যায় না।</p>
       <div class="legend" aria-label="Attendance legend"><span><i class="legend-dot present"></i>Present</span><span><i class="legend-dot off"></i>Absent</span><span><i class="legend-dot fut"></i>Upcoming</span><span><i class="legend-dot pre"></i>Before joining</span><span><i class="legend-dot today"></i>Today</span></div>
       <div id="attGrid" class="att-cards"></div>
     </section>
