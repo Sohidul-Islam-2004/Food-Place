@@ -31,7 +31,7 @@ body {
     margin: 0;
     background: var(--bg);
     color: var(--ink);
-    font: 14px/1.5 'Inter', 'Noto Sans Bengali', system-ui, sans-serif;
+    font: 14px/1.5 'Noto Sans Bengali', 'Inter', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased
 }
 
@@ -39,7 +39,7 @@ h2,
 h3,
 h4 {
     margin: 0;
-    letter-spacing: -.02em;
+    letter-spacing: 0;
     font-weight: 700
 }
 
@@ -302,7 +302,7 @@ aside {
 
 .brand-name small {
     font-size: .62rem;
-    letter-spacing: .12em;
+    letter-spacing: 0;
     color: var(--mute)
 }
 
@@ -428,8 +428,7 @@ main {
     color: var(--mute);
     font-size: .74rem;
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: .05em
+    letter-spacing: 0
 }
 
 .stat b {
@@ -632,8 +631,7 @@ dialog form {
 
 .sec h4 {
     font-size: .74rem;
-    text-transform: uppercase;
-    letter-spacing: .08em;
+    letter-spacing: 0;
     color: var(--mute);
     margin-bottom: .7rem
 }
@@ -777,7 +775,7 @@ dialog form {
     }
 
     .stats {
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: .65rem
     }
 
@@ -891,8 +889,7 @@ dialog form {
     display: block;
     font-size: .68rem;
     color: var(--mute);
-    text-transform: uppercase;
-    letter-spacing: .05em
+    letter-spacing: 0
 }
 
 .att-card .np b {
@@ -916,6 +913,7 @@ dialog form {
     background: var(--soft);
     border: 1px solid var(--line);
     border-radius: 10px;
+    min-width: 0;
     padding: .55rem .65rem
 }
 
@@ -929,7 +927,8 @@ dialog form {
     display: block;
     font-size: .7rem;
     color: var(--mute);
-    line-height: 1.25
+    line-height: 1.25;
+    overflow-wrap: anywhere
 }
 
 .leave small {
@@ -1170,8 +1169,7 @@ dialog form {
     display: block;
     font-size: .68rem;
     color: var(--mute);
-    text-transform: uppercase;
-    letter-spacing: .05em
+    letter-spacing: 0
 }
 
 .meta b {
@@ -1241,8 +1239,7 @@ dialog form {
 .kv dt {
     font-size: .72rem;
     color: var(--mute);
-    text-transform: uppercase;
-    letter-spacing: .04em
+    letter-spacing: 0
 }
 
 .kv dd {
@@ -1333,7 +1330,7 @@ aside {
 .brand-name b {
     color: #fff;
     font-size: 1.2rem;
-    letter-spacing: -.01em
+    letter-spacing: 0
 }
 
 .brand-name small {
@@ -1372,33 +1369,35 @@ aside nav button.on {
 .stat {
     position: relative;
     overflow: hidden;
+    min-width: 0;
     padding: 1.15rem 1.25rem
-}
-
-.stat::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 4px;
-    background: var(--accent)
-}
-
-.stat.s-green::before {
-    background: #16a34a
-}
-
-.stat.s-red::before {
-    background: var(--bad)
-}
-
-.stat.s-amber::before {
-    background: #f59e0b
 }
 
 .stat b {
     font-size: 1.9rem
+}
+
+#paySummary .stat {
+    min-width: 0;
+    padding: .9rem 1rem;
+}
+
+#paySummary .stat span {
+    font-size: .78rem;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
+#paySummary .stat b {
+    font-size: 1.35rem;
+    line-height: 1.3;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+#paySummary .stat .sub {
+    min-height: 0;
+    margin-top: .3rem;
 }
 
 .bar {
@@ -1634,8 +1633,7 @@ aside nav button.on {
     display: block;
     font-size: .74rem;
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: .05em;
+    letter-spacing: 0;
     color: var(--mute)
 }
 
@@ -1752,6 +1750,23 @@ aside nav button.on {
     .att-card footer {
         flex-wrap: wrap
     }
+
+    .pst.is-paid {
+        flex: 1 1 100%
+    }
+
+    .pst.is-paid .paid-chip {
+        flex: 1 1 100%;
+        min-width: 0;
+        max-width: 100%;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        line-height: 1.35
+    }
+
+    .att-card footer>.small {
+        margin-left: auto
+    }
 }
 
 /* ---- role categories ---- */
@@ -1812,8 +1827,7 @@ aside nav button.on {
     gap: .5rem;
     margin: 0 0 .7rem;
     font-size: .78rem;
-    text-transform: uppercase;
-    letter-spacing: .08em;
+    letter-spacing: 0;
     color: var(--mute)
 }
 

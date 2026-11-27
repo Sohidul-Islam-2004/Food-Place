@@ -63,14 +63,14 @@ async function calculatePayroll(ym) {
 // ---------- ROUTES ----------
 app.post('/api/auth/login', wrap(async (q, s) => {
   const a = await Admin.findOne({ username: q.body.username });
-  if (!a || !await bcrypt.compare(q.body.password || '', a.password)) return s.status(401).json({ error: 'ইউজারনেম বা পাসওয়ার্ড ভুল' });
+  if (!a || !await bcrypt.compare(q.body.password || '', a.password)) return s.status(401).json({ error: 'ব্যবহারকারীর নাম অথবা পাসওয়ার্ড ভুল' });
   s.json({ token: jwt.sign({ id: a._id }, SECRET, { expiresIn: '12h' }), username: a.username });
 }));
 
 // Auth Middleware for all routes below
 app.use('/api', (q, s, n) => {
   try { q.admin = jwt.verify((q.headers.authorization || '').replace('Bearer ', ''), SECRET); n(); }
-  catch { s.status(401).json({ error: 'আবার সাইন ইন করুন' }); }
+  catch { s.status(401).json({ error: 'আবার প্রবেশ করুন' }); }
 });
 
 app.post('/api/auth/password', wrap(async (q, s) => {
@@ -90,7 +90,7 @@ app.post('/api/staff', wrap(async (q, s) => {
       throw e;
     }
   }
-  throw new Error('স্টাফ আইডি তৈরি করা যায়নি');
+  throw new Error('কর্মী নম্বর তৈরি করা যায়নি');
 }));
 
 app.put('/api/staff/:id', wrap(async (q, s) => {
@@ -116,7 +116,7 @@ app.get('/api/attendance', wrap(async (q, s) => {
 
 app.put('/api/attendance', wrap(async (q, s) => {
   const { staff, date } = q.body, st = await Staff.findById(staff);
-  if (!st) throw new Error('স্টাফ পাওয়া যায়নি');
+  if (!st) throw new Error('কর্মী পাওয়া যায়নি');
   const todayStr = new Date(Date.now() + 6 * 3600e3).toISOString().slice(0, 10); // Bangladesh time (UTC+6)
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date || '')) throw new Error('তারিখ সঠিক নয়');
   if (date > todayStr) throw new Error('ভবিষ্যতের তারিখে ছুটি দেওয়া যাবে না');
