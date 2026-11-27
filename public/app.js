@@ -40,17 +40,19 @@ $$('aside nav button').forEach(b => b.onclick = () => show(b.dataset.tab));
 // ---- dashboard ----
 const loadDash = async () => {
   try {
-    const d = await api('/dashboard');
-    $('#dash').innerHTML = `<div class="head"><div class="title-block"><h2>Dashboard</h2><p class="page-caption">Your team at a glance.</p></div><span class="date-chip">${new Date().toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</span></div>
+    const d = await api('/dashboard'), hr = new Date().getHours(), hi = hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening';
+    const present = d.total - d.off.length, pct = d.total ? Math.round(present / d.total * 100) : 0, bal = d.topBalance.filter(r => r.carry);
+    $('#dash').innerHTML = `<div class="head"><div class="title-block"><h2>${hi}</h2><p class="page-caption">Here is how your team looks today.</p></div><span class="date-chip">${new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' })}</span></div>
     <div class="stats">
-      <div class="stat"><span>Active Staff</span><b>${d.total}</b></div>
-      <div class="stat"><span>Present Today</span><b>${d.total - d.off.length}</b></div>
-      <div class="stat"><span>Off Today</span><b>${d.off.length}</b></div>
-      <div class="stat"><span>Monthly Payroll</span><b>৳ ${money(d.payroll)}</b><span class="sub">Base salary ৳ ${money(d.monthlyBase)}</span></div>
+      <div class="stat s-blue"><span>Active staff</span><b>${d.total}</b><span class="sub">on your team</span></div>
+      <div class="stat s-green"><span>Present today</span><b>${present}</b><div class="bar"><i style="width:${pct}%"></i></div><span class="sub">${pct}% of the team</span></div>
+      <div class="stat s-red"><span>Absent today</span><b>${d.off.length}</b><span class="sub">${d.off.length ? 'marked absent' : 'full attendance'}</span></div>
+      <div class="stat s-amber"><span>Payroll this month</span><b>৳ ${money(d.payroll)}</b><span class="sub">Base salary ৳ ${money(d.monthlyBase)}</span></div>
     </div>
+    <div class="qa"><button class="btn" onclick="show('att')">Mark attendance</button><button class="btn ghost" onclick="show('staff');openForm()">Add staff</button></div>
     <div class="two">
-      <div class="panel"><h3>Staff Off Today</h3><ul>${d.off.map(s => `<li>${esc(s.name)} <span class="sub">${esc(s.role || '')}</span></li>`).join('') || '<li class="empty">আজ সবাই উপস্থিত।</li>'}</ul></div>
-      <div class="panel"><h3>Leave Balance</h3><ul>${d.topBalance.filter(r => r.carry).map(r => `<li>${esc(r.name)} <span class="pill">${r.carry} ${r.carry === 1 ? 'day' : 'days'}</span></li>`).join('') || '<li class="empty">এখনো কোনো ছুটি জমা নেই।</li>'}</ul></div>
+      <div class="panel"><h3>Absent today</h3><ul>${d.off.map(s => `<li><span class="dotname"><i class="dot bad"></i>${esc(s.name)}</span><span class="sub">${esc(s.role || '')}</span></li>`).join('') || '<li class="empty">Everyone is present today.</li>'}</ul></div>
+      <div class="panel"><h3>Saved leave</h3><ul>${bal.map(r => `<li><span class="dotname"><i class="dot ok"></i>${esc(r.name)}</span><span class="pill">${r.carry} ${r.carry === 1 ? 'day' : 'days'}</span></li>`).join('') || '<li class="empty">No saved leave yet.</li>'}</ul></div>
     </div>
     <div class="mobile-out"><button class="btn ghost" onclick="window.$('#pwDlg').showModal()">Change Password</button> <button class="btn ghost" onclick="window.logout()">Sign Out</button></div>`;
   } catch (e) {
@@ -59,19 +61,37 @@ const loadDash = async () => {
 };
 
 // ---- staff ----
-const loadStaff = safe(async () => { staff = await api('/staff?status=' + $('#stFilter').value); renderStaff(); });
+const loadStaff = safe(async () => { staff = await api('/staff?status=active'); renderStaff(); });
+const fmtD = d => new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 function renderStaff() {
-  const q = $('#q').value.toLowerCase(), arch = $('#stFilter').value === 'archived';
-  const list = staff.filter(s => `${s.name} ${s.staffId} ${s.role || ''}`.toLowerCase().includes(q));
-  $('#staffTable').innerHTML = `<thead><tr><th>Staff</th><th>Contact</th><th>Duty</th><th>Salary (৳)</th><th>Join Date</th><th></th></tr></thead><tbody>` +
-    (list.map(s => `<tr>
-      <td><div class="who"><div><b>${esc(s.name)}${s.age ? ', ' + esc(s.age) : ''}</b><div class="sub">${esc(s.staffId)} &middot; ${esc(s.role || 'No role')}</div></div></div></td>
-      <td><div>Personal: ${s.phonePersonal ? `<a href="tel:${esc(s.phonePersonal)}">${esc(s.phonePersonal)}</a>` : '-'}</div><div class="sub">Family: ${s.phoneFamily ? `<a href="tel:${esc(s.phoneFamily)}">${esc(s.phoneFamily)}</a>` : '-'}</div></td>
-      <td>${esc(s.dutyHour || '-')} hrs/day</td><td>৳ ${money(s.salary)}</td><td>${new Date(s.joinDate).toLocaleDateString('en-GB')}</td>
-      <td><button class="small" onclick="window.openForm('${s._id}')">Edit</button><button class="small" onclick="window.setStatus('${s._id}','${arch ? 'active' : 'archived'}')">${arch ? 'Restore' : 'Remove'}</button>${arch ? `<button class="small del" onclick="window.hardDelete('${s._id}')">Delete Permanently</button>` : ''}</td></tr>`).join('')
-      || `<tr><td colspan="6" class="empty" style="padding:2rem;text-align:center">${arch ? 'No archived staff.' : 'No staff yet. Add the first staff member.'}</td></tr>`) + '</tbody>';
+  const q = $('#q').value.toLowerCase(), list = staff.filter(s => `${s.name} ${s.staffId} ${s.role || ''}`.toLowerCase().includes(q));
+  $('#staffGrid').innerHTML = list.map(s => `<article class="st-card" data-id="${s._id}" tabindex="0" role="button" aria-label="Open ${esc(s.name)}">
+    <header><div class="nm"><h3>${esc(s.name)}</h3><div class="sub">${s.age ? esc(s.age) + ' yrs · ' : ''}${esc(s.role || 'No role')}</div></div><span class="chev">›</span></header>
+    <div class="meta"><div><span>Salary</span><b>৳ ${money(s.salary)}</b></div><div><span>Duty</span><b>${s.dutyHour ? esc(s.dutyHour) + ' hrs' : '-'}</b></div><div><span>Joined</span><b>${fmtD(s.joinDate)}</b></div></div></article>`).join('')
+    || `<div class="panel empty" style="padding:2rem;text-align:center">${staff.length ? 'No match found.' : 'No staff yet. Add the first staff member.'}</div>`;
 }
-$('#q').oninput = renderStaff; $('#stFilter').onchange = loadStaff; $('#addBtn').onclick = () => openForm();
+const openView = id => {
+  const s = staff.find(x => x._id === id); if (!s) return;
+  const call = (l, p) => p ? `<a class="callbtn" href="tel:${esc(p)}"><span>${l}</span><b>${esc(p)}</b></a>` : `<div class="callbtn off"><span>${l}</span><b>-</b></div>`;
+  $('#viewBody').innerHTML = `<div class="vh"><div class="nm"><h3>${esc(s.name)}</h3><div class="sub">${s.age ? esc(s.age) + ' yrs · ' : ''}${esc(s.role || 'No role')}</div></div><button type="button" class="x" data-vclose aria-label="Close">×</button></div>
+  <div class="vbody">
+    <section class="vsec"><h4>Job</h4><dl class="kv"><div><dt>Monthly salary</dt><dd>৳ ${money(s.salary)}</dd></div><div><dt>Daily duty</dt><dd>${s.dutyHour ? esc(s.dutyHour) + ' hours' : '-'}</dd></div><div><dt>Joined</dt><dd>${fmtD(s.joinDate)}</dd></div><div><dt>Role</dt><dd>${esc(s.role || '-')}</dd></div></dl></section>
+    <section class="vsec"><h4>Contact</h4><div class="calls">${call('Personal', s.phonePersonal)}${call('Family', s.phoneFamily)}</div></section>
+    <section class="vsec"><h4>Address</h4><dl class="kv one"><div><dt>Present</dt><dd>${esc(s.presentAddress || '-')}</dd></div><div><dt>Permanent</dt><dd>${esc(s.permanentAddress || '-')}</dd></div></dl></section>
+  </div>
+  <div class="actions"><button type="button" class="btn ghost rm" data-rm="${s._id}">Remove</button><button type="button" class="btn" data-edit="${s._id}">Edit</button></div>`;
+  $('#viewDlg').showModal();
+};
+$('#staffGrid').onclick = e => { const c = e.target.closest('.st-card'); if (c) openView(c.dataset.id); };
+$('#staffGrid').onkeydown = e => { if (e.key === 'Enter' && e.target.matches('.st-card')) openView(e.target.dataset.id); };
+$('#viewDlg').onclick = e => {
+  const t = e.target, d = $('#viewDlg');
+  if (t === d || t.closest('[data-vclose]')) return d.close();
+  const ed = t.closest('[data-edit]'), rm = t.closest('[data-rm]');
+  if (ed) { d.close(); window.openForm(ed.dataset.edit); }
+  if (rm) { d.close(); window.setStatus(rm.dataset.rm, 'archived'); }
+};
+$('#q').oninput = renderStaff; $('#addBtn').onclick = () => openForm();
 window.openForm = id => {
   editId = id || null; const f = $('#form'); f.reset();
   $('#dlgTitle').textContent = id ? 'Edit Staff' : 'Add Staff';
@@ -89,10 +109,6 @@ window.setStatus = safe(async (id, status) => {
   const s = staff.find(x => x._id === id);
   if (status === 'archived' && !confirm(`Remove ${s.name} from active staff? You can restore them later.`)) return;
   await api('/staff/' + id, 'PUT', { status }); toast(status === 'active' ? 'Staff restored' : 'Staff archived'); loadStaff();
-});
-window.hardDelete = safe(async id => {
-  if (!confirm('Permanently delete this staff member and all attendance records? This cannot be undone.')) return;
-  await api('/staff/' + id + '?hard=1', 'DELETE'); toast('Staff deleted'); loadStaff();
 });
 
 // ---- attendance + pay: one card per staff ----
@@ -190,7 +206,7 @@ window.slip = i => {
   .t td{font-weight:700;font-size:1.1rem;border-top:2px solid #111827;border-bottom:0;padding-top:1rem;}
 </style></head><body>
 <h1>Payslip</h1>
-<p><b>${esc(r.name)}</b> &middot; ${esc(r.staffId)} &middot; ${esc(r.role || '')}<br>Month: ${esc(m)} (${r.days} days)</p>
+<p><b>${esc(r.name)}</b> &middot; ${esc(r.role || '')}<br>Month: ${esc(m)} (${r.days} days)</p>
 <table>
 ${line('Monthly salary', money(r.salary))}
 ${line('Daily rate', r.daily.toFixed(2))}

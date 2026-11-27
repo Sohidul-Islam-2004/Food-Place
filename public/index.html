@@ -10,7 +10,7 @@
 <body>
 <section id="login" class="login" hidden>
   <form id="loginForm">
-    <div class="logo">SP</div><h1>Staff Pro</h1><p>আপনার টিম ম্যানেজ করতে সাইন ইন করুন</p>
+    <h1>Staff Pro</h1><p>আপনার টিম ম্যানেজ করতে সাইন ইন করুন</p>
     <input id="user" placeholder="Username" autocomplete="username" required>
     <input id="pass" type="password" placeholder="Password" autocomplete="current-password" required>
     <button class="btn">Sign In</button><small id="loginErr"></small>
@@ -19,7 +19,7 @@
 
 <div id="app" hidden>
   <aside>
-    <div class="brand"><span class="logo">SP</span><span class="brand-name"><b>Staff Pro</b><small>TEAM MANAGEMENT</small></span></div>
+    <div class="brand"><span class="brand-name"><b>Staff Pro</b><small>TEAM MANAGEMENT</small></span></div>
     <nav>
       <button data-tab="dash" class="on"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect></svg><span>Dashboard</span></button>
       <button data-tab="staff"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20v-1.2A5.3 5.3 0 0 1 7.8 13h2.4a5.3 5.3 0 0 1 5.3 5.3V20"></path><path d="M16 4.8a3.5 3.5 0 0 1 0 6.4M18 13.4a5.3 5.3 0 0 1 3.5 5V20"></path></svg><span>Staff</span></button>
@@ -34,9 +34,9 @@
     <section id="dash"></section>
     <section id="staff" hidden>
       <div class="head"><div class="title-block"><h2>Staff</h2><p class="page-caption">Manage your team and staff records.</p></div><div class="tools">
-        <input id="q" placeholder="Search by name, ID or role"><select id="stFilter" aria-label="Staff status"><option value="active">Active</option><option value="archived">Archived</option></select>
+        <input id="q" placeholder="Search staff by name or role">
         <button class="btn" id="addBtn">Add Staff</button></div></div>
-      <div class="panel scroll"><div class="table-wrap"><table id="staffTable"></table></div></div>
+      <div id="staffGrid" class="staff-cards"></div>
     </section>
     <section id="att" hidden>
       <div class="head"><div class="title-block"><h2>Attendance &amp; Pay</h2><p class="page-caption">Each staff member's leave calendar and monthly pay in one place.</p></div><div class="tools attendance-tools"><input type="month" id="attMonth" aria-label="Month"><button class="btn ghost" id="csvBtn">Export CSV</button></div></div>
@@ -72,6 +72,7 @@
     <div class="actions"><button type="button" class="btn ghost" data-close>Cancel</button><button class="btn">Save Staff</button></div>
   </form>
 </dialog>
+<dialog id="viewDlg"><div id="viewBody"></div></dialog>
 <dialog id="pwDlg">
   <form id="pwForm" method="dialog">
     <h3>Change Password</h3>
