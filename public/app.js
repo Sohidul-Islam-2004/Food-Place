@@ -53,6 +53,7 @@ $$('aside nav button').forEach(b => b.onclick = () => show(b.dataset.tab));
 
 // ---- dashboard ----
 function gotoPay(m) { $('#attMonth').value = m; show('att'); }
+function gotoAttendance() { $('#attMonth').value = today.slice(0, 7); show('att'); }
 const loadDash = async () => {
   try {
     const d = await api('/dashboard'), hr = new Date().getHours(), hi = hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening';
@@ -63,18 +64,24 @@ const loadDash = async () => {
     $('#dash').innerHTML = `<div class="head"><div class="title-block"><h2>${hi}</h2><p class="page-caption">Here is how your team looks today.</p></div><span class="date-chip">${new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' })}</span></div>
     ${u.count ? `<div class="due ${st[0]}">
       <div><span class="lbl">Salary due · ${monthName(u.month)}</span><b class="amt">৳ ${money(u.total)}</b><span class="state">${st[1]}</span><span class="sub"> · pay date ${fmtD(u.dueDate)}</span></div>
-      <div><div class="bar"><i style="width:${Math.round(u.paidCount / u.count * 100)}%"></i></div><span class="sub">${u.paidCount} of ${u.count} staff paid · ৳ ${money(u.paidAmount)} paid</span></div>
+      <div><div class="bar" role="progressbar" aria-label="Staff paid" aria-valuemin="0" aria-valuemax="${u.count}" aria-valuenow="${u.paidCount}"><i style="width:${Math.round(u.paidCount / u.count * 100)}%"></i></div><span class="sub">${u.paidCount} of ${u.count} staff paid · ৳ ${money(u.paidAmount)} paid</span></div>
       <button class="btn" onclick="gotoPay('${u.month}')">${all ? 'View' : 'Review & pay'}</button></div>` : ''}
+    <section class="dashboard-actions" aria-label="Quick actions">
+      <div class="action-heading"><h3>Quick actions</h3><p class="sub">Common tasks</p></div>
+      <div class="qa">
+        <button class="btn" onclick="gotoAttendance()"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M16 3v4M8 3v4M3 10h18M8 14h2M14 14h2M8 17h2"></path></svg><span>Mark attendance</span></button>
+        <button class="btn ghost" onclick="show('staff');openForm()"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20v-1.2A5.3 5.3 0 0 1 7.8 13h2.4a5.3 5.3 0 0 1 5.3 5.3V20"></path><path d="M19 8v6M16 11h6"></path></svg><span>Add staff</span></button>
+      </div>
+    </section>
     <div class="stats">
-      <div class="stat s-blue"><span>Active staff</span><b>${d.total}</b><span class="sub">on your team</span></div>
+      <div class="stat s-blue"><span>Active staff</span><b>${d.total}</b><span class="sub">current team</span></div>
       <div class="stat s-green"><span>Present today</span><b>${present}</b><div class="bar"><i style="width:${pct}%"></i></div><span class="sub">${pct}% of the team</span></div>
       <div class="stat s-red"><span>Absent today</span><b>${d.off.length}</b><span class="sub">${d.off.length ? 'marked absent' : 'full attendance'}</span></div>
-      <div class="stat s-amber"><span>This month so far</span><b>৳ ${money(d.payroll)}</b><span class="sub">Pay date ${fmtD(np)} · base ৳ ${money(d.monthlyBase)}</span></div>
+      <div class="stat s-amber"><span>Month to date</span><b>৳ ${money(d.payroll)}</b><span class="sub">Pay date ${fmtD(np)} · base ৳ ${money(d.monthlyBase)}</span></div>
     </div>
-    <div class="qa"><button class="btn" onclick="show('att')">Mark attendance</button><button class="btn ghost" onclick="show('staff');openForm()">Add staff</button></div>
     <div class="two">
-      <div class="panel"><h3>Absent today</h3><ul>${d.off.map(s => `<li><span class="dotname"><i class="dot bad"></i>${esc(s.name)}</span><span class="sub">${esc(s.role || '')}</span></li>`).join('') || '<li class="empty">Everyone is present today.</li>'}</ul></div>
-      <div class="panel"><h3>Saved leave</h3><ul>${bal.map(r => `<li><span class="dotname"><i class="dot ok"></i>${esc(r.name)}</span><span class="pill">${r.carry} ${r.carry === 1 ? 'day' : 'days'}</span></li>`).join('') || '<li class="empty">No saved leave yet.</li>'}</ul></div>
+      <div class="panel"><h3 class="panel-title">Absent today <span class="pill">${d.off.length}</span></h3><ul>${d.off.map(s => `<li><span class="dotname"><i class="dot bad"></i>${esc(s.name)}</span><span class="sub">${esc(s.role || '')}</span></li>`).join('') || '<li class="empty">Everyone is present today.</li>'}</ul></div>
+      <div class="panel"><h3 class="panel-title">Saved leave <span class="pill">${bal.length} staff</span></h3><ul>${bal.map(r => `<li><span class="dotname"><i class="dot ok"></i>${esc(r.name)}</span><span class="pill">${r.carry} ${r.carry === 1 ? 'day' : 'days'}</span></li>`).join('') || '<li class="empty">No saved leave yet.</li>'}</ul></div>
     </div>
     <div class="mobile-out"><button class="btn ghost" onclick="window.$('#pwDlg').showModal()">Change Password</button> <button class="btn ghost" onclick="window.logout()">Sign Out</button></div>`;
   } catch (e) {

@@ -785,6 +785,11 @@ dialog form {
         font-size: 1.3rem
     }
 
+    .stat.s-amber b {
+        font-size: 1.25rem;
+        white-space: nowrap
+    }
+
     .fields {
         grid-template-columns: 1fr
     }
@@ -1007,8 +1012,8 @@ dialog form {
 }
 
 .day.fut {
-    background: #f2f4f7;
-    color: #98a2b3
+    background: #151d29;
+        color: #ffffff;
 }
 
 .day.pre {
@@ -1411,11 +1416,56 @@ aside nav button.on {
     border-radius: 99px
 }
 
+.dashboard-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.2rem;
+    margin: -.2rem 0 1.3rem;
+    padding: .9rem 1rem;
+    border: 1px solid var(--line);
+    border-radius: var(--r);
+    background: var(--card);
+    box-shadow: var(--sh)
+}
+
+.action-heading h3 {
+    font-size: .95rem
+}
+
+.action-heading .sub {
+    margin-top: .15rem
+}
+
 .qa {
     display: flex;
     gap: .6rem;
     flex-wrap: wrap;
-    margin: -.2rem 0 1.3rem
+    margin: 0
+}
+
+.qa .btn {
+    min-width: 160px;
+    min-height: 44px;
+    justify-content: flex-start
+}
+
+.qa .nav-icon {
+    width: 17px;
+    height: 17px
+}
+
+.panel-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .65rem
+}
+
+.panel-title .pill {
+    flex: none;
+    font-size: .7rem;
+    font-weight: 600
 }
 
 .dotname {
@@ -1625,19 +1675,78 @@ aside nav button.on {
     }
 
     .due {
-        grid-template-columns: 1fr;
-        gap: .9rem;
-        padding: 1.1rem
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: .65rem .85rem;
+        padding: .9rem
+    }
+
+    .due>div:first-child {
+        grid-column: 1;
+        min-width: 0
+    }
+
+    .due>div:nth-child(2) {
+        grid-column: 1/-1
+    }
+
+    .due .lbl {
+        font-size: .68rem
+    }
+
+    .due .amt {
+        font-size: 1.65rem
+    }
+
+    .due .sub {
+        font-size: .72rem
     }
 
     .due .btn {
-        width: 100%;
-        min-height: 44px
+        grid-column: 2;
+        grid-row: 1;
+        width: auto;
+        min-width: 112px;
+        min-height: 44px;
+        padding: .6rem .7rem;
+        font-size: .82rem;
+        white-space: nowrap
     }
 
     .qa .btn {
         flex: 1;
         min-height: 44px
+    }
+
+    .dashboard-actions {
+        flex-direction: column;
+        align-items: stretch;
+        gap: .7rem;
+        padding: .85rem
+    }
+
+    .action-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .5rem
+    }
+
+    .action-heading .sub {
+        margin: 0
+    }
+
+    .qa {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: .5rem
+    }
+
+    .qa .btn {
+        min-width: 0;
+        justify-content: center;
+        gap: .35rem;
+        padding: .6rem .45rem;
+        font-size: .8rem
     }
 
     .att-card footer {
