@@ -41,7 +41,7 @@ $$('aside nav button').forEach(b => b.onclick = () => show(b.dataset.tab));
 const loadDash = async () => {
   try {
     const d = await api('/dashboard');
-    $('#dash').innerHTML = `<div class="head"><h2>Dashboard</h2><span class="sub">${new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span></div>
+    $('#dash').innerHTML = `<div class="head"><div class="title-block"><h2>Dashboard</h2><p class="page-caption">Your team at a glance.</p></div><span class="date-chip">${new Date().toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</span></div>
     <div class="stats">
       <div class="stat"><span>Active Staff</span><b>${d.total}</b></div>
       <div class="stat"><span>Present Today</span><b>${d.total - d.off.length}</b></div>
@@ -65,9 +65,9 @@ function renderStaff() {
   const list = staff.filter(s => `${s.name} ${s.staffId} ${s.role || ''}`.toLowerCase().includes(q));
   $('#staffTable').innerHTML = `<thead><tr><th>Staff</th><th>Contact</th><th>Duty</th><th>Salary (৳)</th><th>Join Date</th><th></th></tr></thead><tbody>` +
     (list.map(s => `<tr>
-      <td><div class="who"><span class="av">${esc(s.name.split(' ').filter(Boolean).map(w => w[0]).slice(0, 2).join('').toUpperCase())}</span><div><b>${esc(s.name)}${s.age ? ', ' + esc(s.age) : ''}</b><div class="sub">${esc(s.staffId)} &middot; ${esc(s.role || 'No role')}</div></div></div></td>
-      <td>${s.phonePersonal ? `<a href="tel:${esc(s.phonePersonal)}">${esc(s.phonePersonal)}</a>` : '-'}<div class="sub">Family: ${s.phoneFamily ? `<a href="tel:${esc(s.phoneFamily)}">${esc(s.phoneFamily)}</a>` : '-'}</div></td>
-      <td>${esc(s.dutyHour || '-')} hrs/day</td><td>${money(s.salary)}</td><td>${new Date(s.joinDate).toLocaleDateString('en-GB')}</td>
+      <td><div class="who"><div><b>${esc(s.name)}${s.age ? ', ' + esc(s.age) : ''}</b><div class="sub">${esc(s.staffId)} &middot; ${esc(s.role || 'No role')}</div></div></div></td>
+      <td><div>Personal: ${s.phonePersonal ? `<a href="tel:${esc(s.phonePersonal)}">${esc(s.phonePersonal)}</a>` : '-'}</div><div class="sub">Family: ${s.phoneFamily ? `<a href="tel:${esc(s.phoneFamily)}">${esc(s.phoneFamily)}</a>` : '-'}</div></td>
+      <td>${esc(s.dutyHour || '-')} hrs/day</td><td>৳ ${money(s.salary)}</td><td>${new Date(s.joinDate).toLocaleDateString('en-GB')}</td>
       <td><button class="small" onclick="window.openForm('${s._id}')">Edit</button><button class="small" onclick="window.setStatus('${s._id}','${arch ? 'active' : 'archived'}')">${arch ? 'Restore' : 'Remove'}</button>${arch ? `<button class="small del" onclick="window.hardDelete('${s._id}')">Delete Permanently</button>` : ''}</td></tr>`).join('')
       || `<tr><td colspan="6" class="empty" style="padding:2rem;text-align:center">${arch ? 'No archived staff.' : 'No staff yet. Add the first staff member.'}</td></tr>`) + '</tbody>';
 }
@@ -106,13 +106,14 @@ const loadAtt = safe(async () => {
   $('#attTable').innerHTML = `<thead><tr><th>Staff</th>${Array.from({ length: days }, (_, i) => `<th>${i + 1}</th>`).join('')}<th>Off days</th></tr></thead><tbody>` +
     (list.map(s => `<tr><td><b>${esc(s.name)}</b></td>${Array.from({ length: days }, (_, i) => {
       const date = `${m}-${String(i + 1).padStart(2, '0')}`, o = off.has(s._id + date);
-      return `<td><button class="cell ${o ? 'off' : ''} ${date === today ? 'today' : ''}" data-s="${s._id}" data-d="${date}" aria-label="${esc(s.name)} — ${date}, ${o ? 'off' : 'present'}" title="${o ? 'Off' : 'Present'}">${o ? 'O' : ''}</button></td>`;
+      return `<td><button class="cell ${o ? 'off' : 'present'} ${date === today ? 'today' : ''}" data-s="${s._id}" data-d="${date}" aria-label="${esc(s.name)} — ${date}, ${o ? 'off' : 'present'}" title="${o ? 'Day off' : 'Present'}">${o ? '×' : '✓'}</button></td>`;
     }).join('')}<td class="cnt">${recs.filter(r => r.staff === s._id).length}</td></tr>`).join('') || '<tr><td class="empty" style="padding:2rem">আগে স্টাফ যোগ করুন।</td></tr>') + '</tbody>';
+  $('#attTable').closest('.table-wrap').scrollLeft = 0;
 });
 $('#attTable').onclick = safe(async e => {
   const c = e.target.closest('.cell'); if (!c) return;
   const r = await api('/attendance', 'PUT', { staff: c.dataset.s, date: c.dataset.d });
-  c.classList.toggle('off', r.off); c.textContent = r.off ? 'O' : '';
+  c.classList.toggle('off', r.off); c.classList.toggle('present', !r.off); c.textContent = r.off ? '×' : '✓';
   const row = c.closest('tr'); row.querySelector('.cnt').textContent = row.querySelectorAll('.cell.off').length;
 });
 
@@ -122,10 +123,10 @@ const loadPay = safe(async () => {
   const m = $('#payMonth').value; if (!m) return;
   payRows = await api('/payroll?month=' + m);
   $('#payTable').innerHTML = `<thead><tr><th>Staff</th><th>Role</th><th>Monthly Salary</th><th>Daily Rate</th><th>Days Off</th><th>Free Days Left</th><th>Unpaid Days</th><th>Carryover</th><th>Bonus</th><th>Advance</th><th>Net Pay</th><th></th></tr></thead><tbody>` +
-    payRows.map((r, i) => `<tr><td data-label="Staff"><b>${esc(r.name)}</b><div class="sub">${esc(r.staffId)}</div></td><td data-label="Role">${esc(r.role || '-')}</td><td data-label="Monthly Salary">${money(r.salary)}</td><td data-label="Daily Rate">${r.daily.toFixed(2)}</td><td data-label="Days Off">${r.used}</td><td data-label="Free Days Left">${r.avail}</td>
+    payRows.map((r, i) => `<tr><td data-label="Staff"><b>${esc(r.name)}</b><div class="sub">${esc(r.staffId)}<span class="pay-card-role"> · ${esc(r.role || '-')}</span></div></td><td data-label="Role">${esc(r.role || '-')}</td><td data-label="Monthly Salary">৳ ${money(r.salary)}</td><td data-label="Daily Rate">৳ ${r.daily.toFixed(2)}</td><td data-label="Days Off">${r.used}</td><td data-label="Free Days Left">${r.avail}</td>
       <td class="${r.unpaid ? 'bad' : ''}" data-label="Unpaid Days">${r.unpaid}</td><td data-label="Carryover">${r.carry}</td>
       <td data-label="Bonus"><input class="n" type="number" min="0" value="${r.bonus}" data-i="${i}" data-k="bonus" aria-label="Bonus for ${esc(r.name)}"></td><td data-label="Advance"><input class="n" type="number" min="0" value="${r.advance}" data-i="${i}" data-k="advance" aria-label="Advance for ${esc(r.name)}"></td>
-      <td class="net" id="net${i}" data-label="Net Pay">${money(r.net)}</td><td data-label="Payslip"><button class="small" onclick="window.slip(${i})">Payslip</button></td></tr>`).join('') +
+      <td class="net" id="net${i}" data-label="Net Pay">৳ ${money(r.net)}</td><td data-label="Payslip"><button class="small" onclick="window.slip(${i})">Payslip</button></td></tr>`).join('') +
     `</tbody><tfoot><tr><td colspan="10"><b>Total Payroll</b></td><td class="net" id="total" colspan="2">৳ ${money(payRows.reduce((a, r) => a + r.net, 0))}</td></tr></tfoot>`;
 });
 $('#payTable').onchange = safe(async e => {
@@ -135,7 +136,7 @@ $('#payTable').onchange = safe(async e => {
   r.bonus = +b.value || 0;
   r.advance = +a.value || 0;
   r.net = typeof res.net === 'number' ? res.net : r.salary - (r.deduction || 0) + r.bonus - r.advance;
-  $('#net' + i).textContent = money(r.net);
+  $('#net' + i).textContent = '৳ ' + money(r.net);
   $('#total').textContent = '৳ ' + money(payRows.reduce((s, x) => s + x.net, 0));
   toast('Saved');
 });

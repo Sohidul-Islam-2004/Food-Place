@@ -19,12 +19,12 @@
 
 <div id="app" hidden>
   <aside>
-    <div class="brand"><span class="logo">SP</span><b>স্টাফ প্রো</b></div>
+    <div class="brand"><span class="logo">SP</span><span class="brand-name"><b>Staff Pro</b><small>TEAM MANAGEMENT</small></span></div>
     <nav>
-      <button data-tab="dash" class="on">📊 Dashboard</button>
-      <button data-tab="staff">👥 Staff</button>
-      <button data-tab="att">📅 Attendance</button>
-      <button data-tab="pay">💰 Payroll</button>
+      <button data-tab="dash" class="on"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect></svg><span>Dashboard</span></button>
+      <button data-tab="staff"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20v-1.2A5.3 5.3 0 0 1 7.8 13h2.4a5.3 5.3 0 0 1 5.3 5.3V20"></path><path d="M16 4.8a3.5 3.5 0 0 1 0 6.4M18 13.4a5.3 5.3 0 0 1 3.5 5V20"></path></svg><span>Staff</span></button>
+      <button data-tab="att"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M16 3v4M8 3v4M3 10h18M8 14h2M14 14h2M8 17h2"></path></svg><span>Attendance</span></button>
+      <button data-tab="pay"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="15" rx="2"></rect><path d="M3 9h18M7 15h4"></path><circle cx="17" cy="15" r="1"></circle></svg><span>Payroll</span></button>
     </nav>
     <div class="side-foot">
       <button class="link" id="pwBtn">Change Password</button>
@@ -34,18 +34,19 @@
   <main>
     <section id="dash"></section>
     <section id="staff" hidden>
-      <div class="head"><h2>Staff</h2><div class="tools">
+      <div class="head"><div class="title-block"><h2>Staff</h2><p class="page-caption">Manage your team and staff records.</p></div><div class="tools">
         <input id="q" placeholder="Search by name, ID or role"><select id="stFilter" aria-label="Staff status"><option value="active">Active</option><option value="archived">Archived</option></select>
         <button class="btn" id="addBtn">Add Staff</button></div></div>
       <div class="panel scroll"><div class="table-wrap"><table id="staffTable"></table></div></div>
     </section>
     <section id="att" hidden>
-      <div class="head"><h2>Attendance</h2><div class="tools attendance-tools"><input type="month" id="attMonth" aria-label="Attendance month"></div></div>
+      <div class="head"><div class="title-block"><h2>Attendance</h2><p class="page-caption">Track days off for each staff member.</p></div><div class="tools attendance-tools"><input type="month" id="attMonth" aria-label="Attendance month"></div></div>
       <p class="hint">সবাইকে ডিফল্টভাবে উপস্থিত ধরা হয়। ছুটি চিহ্নিত করতে তারিখে চাপ দিন; বাতিল করতে আবার চাপ দিন।</p>
+      <div class="legend" aria-label="Attendance legend"><span><i class="legend-dot present"></i>Present</span><span><i class="legend-dot off"></i>Day off</span><span><i class="legend-dot today"></i>Today</span></div>
       <div class="panel scroll"><div class="table-wrap"><table id="attTable" class="grid"></table></div></div>
     </section>
     <section id="pay" hidden>
-      <div class="head"><h2>Payroll</h2><div class="tools payroll-tools"><input type="month" id="payMonth" aria-label="Payroll month"><button class="btn ghost" id="csvBtn">Export CSV</button></div></div>
+      <div class="head"><div class="title-block"><h2>Payroll</h2><p class="page-caption">Review monthly pay, leave, and adjustments.</p></div><div class="tools payroll-tools"><input type="month" id="payMonth" aria-label="Payroll month"><button class="btn ghost" id="csvBtn">Export CSV</button></div></div>
       <p class="hint">দৈনিক বেতন = মাসিক বেতন ÷ মাসের দিন। প্রতি মাসে ২টি বেতনসহ ছুটি; অব্যবহৃত ছুটি পরের মাসে যোগ হয়। অতিরিক্ত ছুটিতে এক দিনের বেতন কাটা হয়।</p>
       <div class="panel scroll"><div class="table-wrap"><table id="payTable"></table></div></div>
     </section>
