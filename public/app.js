@@ -26,7 +26,7 @@ $('#loginForm').onsubmit = async e => {
 };
 $('#logout').onclick = logout;
 $('#pwBtn').onclick = () => $('#pwDlg').showModal();
-$('#pwForm').onsubmit = safe(async e => { e.preventDefault(); await api('/auth/password', 'POST', Object.fromEntries(new FormData(e.target))); $('#pwDlg').close(); e.target.reset(); toast('পাসওয়ার্ড আপডেট হয়েছে'); });
+$('#pwForm').onsubmit = safe(async e => { e.preventDefault(); await api('/auth/password', 'POST', Object.fromEntries(new FormData(e.target))); $('#pwDlg').close(); e.target.reset(); toast('Password updated'); });
 $$('[data-close]').forEach(b => b.onclick = () => b.closest('dialog').close());
 
 // ---- tabs ----
@@ -41,20 +41,20 @@ $$('aside nav button').forEach(b => b.onclick = () => show(b.dataset.tab));
 const loadDash = async () => {
   try {
     const d = await api('/dashboard');
-    $('#dash').innerHTML = `<div class="head"><h2>ড্যাশবোর্ড</h2><span class="sub">${new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span></div>
+    $('#dash').innerHTML = `<div class="head"><h2>Dashboard</h2><span class="sub">${new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span></div>
     <div class="stats">
-      <div class="stat"><span>সক্রিয় স্টাফ</span><b>${d.total}</b></div>
-      <div class="stat"><span>আজ উপস্থিত</span><b>${d.total - d.off.length}</b></div>
-      <div class="stat"><span>আজ ছুটিতে</span><b>${d.off.length}</b></div>
-      <div class="stat"><span>এ মাসের বেতন</span><b>৳ ${money(d.payroll)}</b><span class="sub">মূল বেতন ৳ ${money(d.monthlyBase)}</span></div>
+      <div class="stat"><span>Active Staff</span><b>${d.total}</b></div>
+      <div class="stat"><span>Present Today</span><b>${d.total - d.off.length}</b></div>
+      <div class="stat"><span>Off Today</span><b>${d.off.length}</b></div>
+      <div class="stat"><span>Monthly Payroll</span><b>৳ ${money(d.payroll)}</b><span class="sub">Base salary ৳ ${money(d.monthlyBase)}</span></div>
     </div>
     <div class="two">
-      <div class="panel"><h3>আজ ছুটিতে</h3><ul>${d.off.map(s => `<li>${esc(s.name)} <span class="sub">${esc(s.role || '')}</span></li>`).join('') || '<li class="empty">আজ সবাই উপস্থিত।</li>'}</ul></div>
-      <div class="panel"><h3>সবচেয়ে বেশি সঞ্চিত ছুটি</h3><ul>${d.topBalance.filter(r => r.carry).map(r => `<li>${esc(r.name)} <span class="pill">${r.carry} দিন সঞ্চিত</span></li>`).join('') || '<li class="empty">এখনো কোনো ছুটি সঞ্চিত নেই।</li>'}</ul></div>
+      <div class="panel"><h3>Staff Off Today</h3><ul>${d.off.map(s => `<li>${esc(s.name)} <span class="sub">${esc(s.role || '')}</span></li>`).join('') || '<li class="empty">আজ সবাই উপস্থিত।</li>'}</ul></div>
+      <div class="panel"><h3>Leave Balance</h3><ul>${d.topBalance.filter(r => r.carry).map(r => `<li>${esc(r.name)} <span class="pill">${r.carry} ${r.carry === 1 ? 'day' : 'days'}</span></li>`).join('') || '<li class="empty">এখনো কোনো ছুটি জমা নেই।</li>'}</ul></div>
     </div>
-    <div class="mobile-out"><button class="btn ghost" onclick="window.$('#pwDlg').showModal()">পাসওয়ার্ড পরিবর্তন</button> <button class="btn ghost" onclick="window.logout()">সাইন আউট</button></div>`;
+    <div class="mobile-out"><button class="btn ghost" onclick="window.$('#pwDlg').showModal()">Change Password</button> <button class="btn ghost" onclick="window.logout()">Sign Out</button></div>`;
   } catch (e) {
-    $('#dash').innerHTML = `<div class="panel"><h3>ড্যাশবোর্ড লোড করা যায়নি</h3><p class="bad">${esc(e.message)}</p><button class="btn" onclick="window.loadDash()">আবার চেষ্টা করুন</button></div>`;
+    $('#dash').innerHTML = `<div class="panel"><h3>Dashboard unavailable</h3><p class="bad">${esc(e.message)}</p><button class="btn" onclick="window.loadDash()">Try again</button></div>`;
   }
 };
 
@@ -83,16 +83,16 @@ $('#form').onsubmit = safe(async e => {
   e.preventDefault(); const d = Object.fromEntries(new FormData(e.target));
   ['age', 'dutyHour'].forEach(k => d[k] = d[k] === '' ? null : +d[k]);
   d.salary = d.salary === '' ? 0 : +d.salary;
-  await api(editId ? '/staff/' + editId : '/staff', editId ? 'PUT' : 'POST', d); $('#dlg').close(); toast('স্টাফ সেভ হয়েছে'); loadStaff();
+  await api(editId ? '/staff/' + editId : '/staff', editId ? 'PUT' : 'POST', d); $('#dlg').close(); toast('Staff saved'); loadStaff();
 });
 window.setStatus = safe(async (id, status) => {
   const s = staff.find(x => x._id === id);
-  if (status === 'archived' && !confirm(`${s.name}-কে সক্রিয় স্টাফ থেকে সরাতে চান? আপনি পরে পুনরুদ্ধার করতে পারবেন।`)) return;
-  await api('/staff/' + id, 'PUT', { status }); toast(status === 'active' ? 'পুনরুদ্ধার করা হয়েছে' : 'সরানো হয়েছে'); loadStaff();
+  if (status === 'archived' && !confirm(`Remove ${s.name} from active staff? You can restore them later.`)) return;
+  await api('/staff/' + id, 'PUT', { status }); toast(status === 'active' ? 'Staff restored' : 'Staff archived'); loadStaff();
 });
 window.hardDelete = safe(async id => {
-  if (!confirm('এই ব্যক্তি এবং তাদের সব হাজিরা স্থায়ীভাবে মুছে ফেলতে চান? এটি ফিরিয়ে আনা সম্ভব নয়।')) return;
-  await api('/staff/' + id + '?hard=1', 'DELETE'); toast('মুছে ফেলা হয়েছে'); loadStaff();
+  if (!confirm('Permanently delete this staff member and all attendance records? This cannot be undone.')) return;
+  await api('/staff/' + id + '?hard=1', 'DELETE'); toast('Staff deleted'); loadStaff();
 });
 
 // ---- attendance grid ----
@@ -103,10 +103,10 @@ const loadAtt = safe(async () => {
   $('#attTable').style.setProperty('--att-days', days);
   const [list, recs] = await Promise.all([api('/staff?status=active'), api('/attendance?month=' + m)]);
   const off = new Set(recs.map(r => r.staff + r.date));
-  $('#attTable').innerHTML = `<thead><tr><th>স্টাফ</th>${Array.from({ length: days }, (_, i) => `<th>${i + 1}</th>`).join('')}<th>ছুটি</th></tr></thead><tbody>` +
+  $('#attTable').innerHTML = `<thead><tr><th>Staff</th>${Array.from({ length: days }, (_, i) => `<th>${i + 1}</th>`).join('')}<th>Off days</th></tr></thead><tbody>` +
     (list.map(s => `<tr><td><b>${esc(s.name)}</b></td>${Array.from({ length: days }, (_, i) => {
       const date = `${m}-${String(i + 1).padStart(2, '0')}`, o = off.has(s._id + date);
-      return `<td><button class="cell ${o ? 'off' : ''} ${date === today ? 'today' : ''}" data-s="${s._id}" data-d="${date}">${o ? 'O' : ''}</button></td>`;
+      return `<td><button class="cell ${o ? 'off' : ''} ${date === today ? 'today' : ''}" data-s="${s._id}" data-d="${date}" aria-label="${esc(s.name)} — ${date}, ${o ? 'off' : 'present'}" title="${o ? 'Off' : 'Present'}">${o ? 'O' : ''}</button></td>`;
     }).join('')}<td class="cnt">${recs.filter(r => r.staff === s._id).length}</td></tr>`).join('') || '<tr><td class="empty" style="padding:2rem">আগে স্টাফ যোগ করুন।</td></tr>') + '</tbody>';
 });
 $('#attTable').onclick = safe(async e => {
@@ -121,12 +121,12 @@ $('#payMonth').value = today.slice(0, 7); $('#payMonth').onchange = () => loadPa
 const loadPay = safe(async () => {
   const m = $('#payMonth').value; if (!m) return;
   payRows = await api('/payroll?month=' + m);
-  $('#payTable').innerHTML = `<thead><tr><th>স্টাফ</th><th>পদবি</th><th>বেতন (৳)</th><th>দৈনিক</th><th>ছুটি</th><th>ফ্রি</th><th>অবৈতনিক</th><th>সঞ্চিত</th><th>বোনাস</th><th>অগ্রিম</th><th>নীট বেতন</th><th></th></tr></thead><tbody>` +
-    payRows.map((r, i) => `<tr><td><b>${esc(r.name)}</b><div class="sub">${esc(r.staffId)}</div></td><td>${esc(r.role || '-')}</td><td>${money(r.salary)}</td><td>${r.daily.toFixed(2)}</td><td>${r.used}</td><td>${r.avail}</td>
-      <td class="${r.unpaid ? 'bad' : ''}">${r.unpaid}</td><td>${r.carry}</td>
-      <td><input class="n" type="number" min="0" value="${r.bonus}" data-i="${i}" data-k="bonus"></td><td><input class="n" type="number" min="0" value="${r.advance}" data-i="${i}" data-k="advance"></td>
-      <td class="net" id="net${i}">${money(r.net)}</td><td><button class="small" onclick="window.slip(${i})">স্লিপ</button></td></tr>`).join('') +
-    `</tbody><tfoot><tr><td colspan="10"><b>মোট প্রদেয়</b></td><td class="net" id="total" colspan="2">৳ ${money(payRows.reduce((a, r) => a + r.net, 0))}</td></tr></tfoot>`;
+  $('#payTable').innerHTML = `<thead><tr><th>Staff</th><th>Role</th><th>Monthly Salary</th><th>Daily Rate</th><th>Days Off</th><th>Free Days Left</th><th>Unpaid Days</th><th>Carryover</th><th>Bonus</th><th>Advance</th><th>Net Pay</th><th></th></tr></thead><tbody>` +
+    payRows.map((r, i) => `<tr><td data-label="Staff"><b>${esc(r.name)}</b><div class="sub">${esc(r.staffId)}</div></td><td data-label="Role">${esc(r.role || '-')}</td><td data-label="Monthly Salary">${money(r.salary)}</td><td data-label="Daily Rate">${r.daily.toFixed(2)}</td><td data-label="Days Off">${r.used}</td><td data-label="Free Days Left">${r.avail}</td>
+      <td class="${r.unpaid ? 'bad' : ''}" data-label="Unpaid Days">${r.unpaid}</td><td data-label="Carryover">${r.carry}</td>
+      <td data-label="Bonus"><input class="n" type="number" min="0" value="${r.bonus}" data-i="${i}" data-k="bonus" aria-label="Bonus for ${esc(r.name)}"></td><td data-label="Advance"><input class="n" type="number" min="0" value="${r.advance}" data-i="${i}" data-k="advance" aria-label="Advance for ${esc(r.name)}"></td>
+      <td class="net" id="net${i}" data-label="Net Pay">${money(r.net)}</td><td data-label="Payslip"><button class="small" onclick="window.slip(${i})">Payslip</button></td></tr>`).join('') +
+    `</tbody><tfoot><tr><td colspan="10"><b>Total Payroll</b></td><td class="net" id="total" colspan="2">৳ ${money(payRows.reduce((a, r) => a + r.net, 0))}</td></tr></tfoot>`;
 });
 $('#payTable').onchange = safe(async e => {
   const i = e.target.dataset.i; if (i === undefined) return;
@@ -137,11 +137,11 @@ $('#payTable').onchange = safe(async e => {
   r.net = typeof res.net === 'number' ? res.net : r.salary - (r.deduction || 0) + r.bonus - r.advance;
   $('#net' + i).textContent = money(r.net);
   $('#total').textContent = '৳ ' + money(payRows.reduce((s, x) => s + x.net, 0));
-  toast('সেভ হয়েছে');
+  toast('Saved');
 });
 $('#csvBtn').onclick = () => {
-  if (!payRows.length) return toast('এক্সপোর্ট করার মতো কিছু নেই');
-  const rows = [['আইডি', 'নাম', 'পদবি', 'বেতন', 'দিন', 'দৈনিক', 'নেওয়া ছুটি', 'অবৈতনিক', 'সঞ্চিত', 'বোনাস', 'অগ্রিম', 'নীট বেতন'],
+  if (!payRows.length) return toast('No payroll data to export');
+  const rows = [['Staff ID', 'Name', 'Role', 'Monthly Salary', 'Days in Month', 'Daily Rate', 'Days Off', 'Unpaid Days', 'Carryover', 'Bonus', 'Advance', 'Net Pay'],
   ...payRows.map(r => [r.staffId, r.name, r.role || '', r.salary, r.days, r.daily.toFixed(2), r.used, r.unpaid, r.carry, r.bonus, r.advance, r.net])];
   const csv = rows.map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\r\n');
   const a = document.createElement('a');
@@ -152,10 +152,10 @@ $('#csvBtn').onclick = () => {
 };
 window.slip = i => {
   const r = payRows[i], m = $('#payMonth').value, w = window.open('', '_blank');
-  if (!w) return toast('স্লিপ প্রিন্ট করতে পপ-আপ চালু করুন');
+  if (!w) return toast('Allow pop-ups to print payslips');
   const line = (k, v, c = '') => `<tr><td>${k}</td><td style="text-align:right" class="${c}">${v}</td></tr>`;
   w.document.write(`<!doctype html><html lang="bn"><head><meta charset="utf-8">
-<title>বেতন স্লিপ - ${esc(r.name)}</title>
+<title>Payslip - ${esc(r.name)}</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
   body{font:15px 'Noto Sans Bengali', sans-serif;max-width:520px;margin:2rem auto;padding:0 1rem;color:#111827;}
@@ -164,20 +164,20 @@ window.slip = i => {
   td{padding:.6rem 0;border-bottom:1px solid #e5e7eb}
   .t td{font-weight:700;font-size:1.1rem;border-top:2px solid #111827;border-bottom:0;padding-top:1rem;}
 </style></head><body>
-<h1>বেতন স্লিপ</h1>
-<p><b>${esc(r.name)}</b> &middot; ${esc(r.staffId)} &middot; ${esc(r.role || '')}<br>মাস: ${esc(m)} (${r.days} দিন)</p>
+<h1>Payslip</h1>
+<p><b>${esc(r.name)}</b> &middot; ${esc(r.staffId)} &middot; ${esc(r.role || '')}<br>Month: ${esc(m)} (${r.days} days)</p>
 <table>
-${line('মাসিক বেতন', money(r.salary))}
-${line('দৈনিক বেতন', r.daily.toFixed(2))}
-${line('নেওয়া ছুটি', r.used)}
-${line('ফ্রি ছুটি বাকি', r.avail)}
-${line('অবৈতনিক ছুটি', r.unpaid)}
-${line('কাটতি', '-' + money(r.deduction))}
-${line('বোনাস', '+' + money(r.bonus))}
-${line('নেওয়া অগ্রিম', '-' + money(r.advance))}
+${line('Monthly salary', money(r.salary))}
+${line('Daily rate', r.daily.toFixed(2))}
+${line('Days off', r.used)}
+${line('Free days left', r.avail)}
+${line('Unpaid days', r.unpaid)}
+${line('Deduction', '-' + money(r.deduction))}
+${line('Bonus', '+' + money(r.bonus))}
+${line('Advance', '-' + money(r.advance))}
 </table>
-<table class="t">${line('নীট বেতন', '৳ ' + money(r.net))}</table>
-<p style="margin-top:2rem;font-size:0.9rem;color:#6b7280">পরবর্তী মাসে বহন করা সঞ্চিত ছুটি: ${r.carry} দিন</p>
+<table class="t">${line('Net pay', '৳ ' + money(r.net))}</table>
+<p style="margin-top:2rem;font-size:0.9rem;color:#6b7280">Leave carried to next month: ${r.carry} days</p>
 <script>onload = () => print()<\/script>
 </body></html>`);
   w.document.close();

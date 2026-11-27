@@ -10,10 +10,10 @@
 <body>
 <section id="login" class="login" hidden>
   <form id="loginForm">
-    <div class="logo">SP</div><h1>স্টাফ প্রো</h1><p>আপনার টিম ম্যানেজ করতে সাইন ইন করুন</p>
-    <input id="user" placeholder="ইউজারনেম" autocomplete="username" required>
-    <input id="pass" type="password" placeholder="পাসওয়ার্ড" autocomplete="current-password" required>
-    <button class="btn">সাইন ইন করুন</button><small id="loginErr"></small>
+    <div class="logo">SP</div><h1>Staff Pro</h1><p>আপনার টিম ম্যানেজ করতে সাইন ইন করুন</p>
+    <input id="user" placeholder="Username" autocomplete="username" required>
+    <input id="pass" type="password" placeholder="Password" autocomplete="current-password" required>
+    <button class="btn">Sign In</button><small id="loginErr"></small>
   </form>
 </section>
 
@@ -27,26 +27,26 @@
       <button data-tab="pay">💰 Payroll</button>
     </nav>
     <div class="side-foot">
-      <button class="link" id="pwBtn">পাসওয়ার্ড পরিবর্তন</button>
-      <button class="link" id="logout">সাইন আউট</button>
+      <button class="link" id="pwBtn">Change Password</button>
+      <button class="link" id="logout">Sign Out</button>
     </div>
   </aside>
   <main>
     <section id="dash"></section>
     <section id="staff" hidden>
       <div class="head"><h2>Staff</h2><div class="tools">
-        <input id="q" placeholder="Search by name, ID or role"><select id="stFilter"><option value="active">Active</option><option value="archived">Archived</option></select>
+        <input id="q" placeholder="Search by name, ID or role"><select id="stFilter" aria-label="Staff status"><option value="active">Active</option><option value="archived">Archived</option></select>
         <button class="btn" id="addBtn">Add Staff</button></div></div>
       <div class="panel scroll"><div class="table-wrap"><table id="staffTable"></table></div></div>
     </section>
     <section id="att" hidden>
-      <div class="head"><h2>হাজিরা</h2><div class="tools"><input type="month" id="attMonth"></div></div>
-      <p class="hint">ডিফল্টভাবে সবাই উপস্থিত। ছুটির দিন চিহ্নিত করতে দিনের ওপর ক্লিক করুন; বাতিল করতে আবার ক্লিক করুন।</p>
+      <div class="head"><h2>Attendance</h2><div class="tools attendance-tools"><input type="month" id="attMonth" aria-label="Attendance month"></div></div>
+      <p class="hint">সবাইকে ডিফল্টভাবে উপস্থিত ধরা হয়। ছুটি চিহ্নিত করতে তারিখে চাপ দিন; বাতিল করতে আবার চাপ দিন।</p>
       <div class="panel scroll"><div class="table-wrap"><table id="attTable" class="grid"></table></div></div>
     </section>
     <section id="pay" hidden>
-      <div class="head"><h2>বেতন শিট</h2><div class="tools"><input type="month" id="payMonth"><button class="btn ghost" id="csvBtn">CSV এক্সপোর্ট</button></div></div>
-      <p class="hint">দৈনিক বেতন = মাসিক বেতন / মাসের দিন। প্রতি ব্যক্তি মাসে ২টি বেতনসহ ছুটি পান; ব্যবহার না করা দিনগুলো পরের মাসে যোগ হয়। অতিরিক্ত ছুটির জন্য এক দিনের বেতন কাটা যায়।</p>
+      <div class="head"><h2>Payroll</h2><div class="tools payroll-tools"><input type="month" id="payMonth" aria-label="Payroll month"><button class="btn ghost" id="csvBtn">Export CSV</button></div></div>
+      <p class="hint">দৈনিক বেতন = মাসিক বেতন ÷ মাসের দিন। প্রতি মাসে ২টি বেতনসহ ছুটি; অব্যবহৃত ছুটি পরের মাসে যোগ হয়। অতিরিক্ত ছুটিতে এক দিনের বেতন কাটা হয়।</p>
       <div class="panel scroll"><div class="table-wrap"><table id="payTable"></table></div></div>
     </section>
   </main>
@@ -72,10 +72,10 @@
 </dialog>
 <dialog id="pwDlg">
   <form id="pwForm" method="dialog">
-    <h3>পাসওয়ার্ড পরিবর্তন</h3>
-    <div class="fields one"><label>বর্তমান পাসওয়ার্ড<input name="current" type="password" required></label>
-    <label>নতুন পাসওয়ার্ড<input name="next" type="password" minlength="6" required></label></div>
-    <div class="actions"><button type="button" class="link" data-close>বাতিল</button><button class="btn">আপডেট করুন</button></div>
+    <h3>Change Password</h3>
+    <div class="fields one"><label>Current Password<input name="current" type="password" required></label>
+    <label>New Password<input name="next" type="password" minlength="6" required></label></div>
+    <div class="actions"><button type="button" class="link" data-close>Cancel</button><button class="btn">Update Password</button></div>
   </form>
 </dialog>
 <div id="toast"></div>
