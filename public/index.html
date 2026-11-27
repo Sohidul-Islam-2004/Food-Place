@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#ffffff">
+<title>স্টাফ প্রো - ম্যানেজমেন্ট সিস্টেম</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<section id="login" class="login" hidden>
+  <form id="loginForm">
+    <div class="logo">SP</div><h1>স্টাফ প্রো</h1><p>আপনার টিম ম্যানেজ করতে সাইন ইন করুন</p>
+    <input id="user" placeholder="ইউজারনেম" autocomplete="username" required>
+    <input id="pass" type="password" placeholder="পাসওয়ার্ড" autocomplete="current-password" required>
+    <button class="btn">সাইন ইন করুন</button><small id="loginErr"></small>
+  </form>
+</section>
+
+<div id="app" hidden>
+  <aside>
+    <div class="brand"><span class="logo">SP</span><b>স্টাফ প্রো</b></div>
+    <nav>
+      <button data-tab="dash" class="on">📊 ড্যাশবোর্ড</button>
+      <button data-tab="staff">👥 স্টাফ</button>
+      <button data-tab="att">📅 হাজিরা</button>
+      <button data-tab="pay">💰 বেতন</button>
+    </nav>
+    <div class="side-foot">
+      <button class="link" id="pwBtn">পাসওয়ার্ড পরিবর্তন</button>
+      <button class="link" id="logout">সাইন আউট</button>
+    </div>
+  </aside>
+  <main>
+    <section id="dash"></section>
+    <section id="staff" hidden>
+      <div class="head"><h2>স্টাফ তালিকা</h2><div class="tools">
+        <input id="q" placeholder="নাম, আইডি বা পদবি দিয়ে খুঁজুন"><select id="stFilter"><option value="active">সক্রিয়</option><option value="archived">আর্কাইভকৃত</option></select>
+        <button class="btn" id="addBtn">নতুন স্টাফ যোগ করুন</button></div></div>
+      <div class="panel scroll"><div class="table-wrap"><table id="staffTable"></table></div></div>
+    </section>
+    <section id="att" hidden>
+      <div class="head"><h2>হাজিরা</h2><div class="tools"><input type="month" id="attMonth"></div></div>
+      <p class="hint">ডিফল্টভাবে সবাই উপস্থিত। ছুটির দিন চিহ্নিত করতে দিনের ওপর ক্লিক করুন; বাতিল করতে আবার ক্লিক করুন।</p>
+      <div class="panel scroll"><div class="table-wrap"><table id="attTable" class="grid"></table></div></div>
+    </section>
+    <section id="pay" hidden>
+      <div class="head"><h2>বেতন শিট</h2><div class="tools"><input type="month" id="payMonth"><button class="btn ghost" id="csvBtn">CSV এক্সপোর্ট</button></div></div>
+      <p class="hint">দৈনিক বেতন = মাসিক বেতন / মাসের দিন। প্রতি ব্যক্তি মাসে ২টি বেতনসহ ছুটি পান; ব্যবহার না করা দিনগুলো পরের মাসে যোগ হয়। অতিরিক্ত ছুটির জন্য এক দিনের বেতন কাটা যায়।</p>
+      <div class="panel scroll"><div class="table-wrap"><table id="payTable"></table></div></div>
+    </section>
+  </main>
+</div>
+
+<dialog id="dlg">
+  <form id="form" method="dialog">
+    <h3 id="dlgTitle">স্টাফ যোগ করুন</h3>
+    <div class="fields">
+      <label>পুরো নাম<input name="name" required></label>
+      <label>পদবি<input name="role"></label>
+      <label>বয়স<input name="age" type="number" min="14" max="90"></label>
+      <label>দৈনিক ডিউটি (ঘণ্টা)<input name="dutyHour" type="number" min="1" max="24"></label>
+      <label>মাসিক বেতন<input name="salary" type="number" min="0" required></label>
+      <label>যোগদানের তারিখ<input name="joinDate" type="date"></label>
+      <label>ব্যক্তিগত ফোন<input name="phonePersonal" type="tel"></label>
+      <label>পরিবারের ফোন<input name="phoneFamily" type="tel"></label>
+      <label class="wide">বর্তমান ঠিকানা<textarea name="presentAddress" rows="2"></textarea></label>
+      <label class="wide">স্থায়ী ঠিকানা<textarea name="permanentAddress" rows="2"></textarea></label>
+    </div>
+    <div class="actions"><button type="button" class="link" data-close>বাতিল</button><button class="btn">সেভ করুন</button></div>
+  </form>
+</dialog>
+<dialog id="pwDlg">
+  <form id="pwForm" method="dialog">
+    <h3>পাসওয়ার্ড পরিবর্তন</h3>
+    <div class="fields one"><label>বর্তমান পাসওয়ার্ড<input name="current" type="password" required></label>
+    <label>নতুন পাসওয়ার্ড<input name="next" type="password" minlength="6" required></label></div>
+    <div class="actions"><button type="button" class="link" data-close>বাতিল</button><button class="btn">আপডেট করুন</button></div>
+  </form>
+</dialog>
+<div id="toast"></div>
+<script src="app.js"></script>
+</body>
+</html>
