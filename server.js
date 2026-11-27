@@ -152,7 +152,8 @@ app.post('/api/payment', wrap(async (q, s) => {
 }));
 app.post('/api/payment/all', wrap(async (q, s) => {
   const { month } = q.body; checkPayMonth(month);
-  const rows = (await withPaid(month)).filter(r => r.inMonth && !r.paid);
+  const ids = Array.isArray(q.body.staff) ? q.body.staff.map(String) : null;
+  const rows = (await withPaid(month)).filter(r => r.inMonth && !r.paid && (!ids || ids.includes(String(r.id))));
   if (rows.length) await Payment.insertMany(rows.map(r => ({ staff: r.id, month, amount: r.net })));
   s.json({ count: rows.length });
 }));
