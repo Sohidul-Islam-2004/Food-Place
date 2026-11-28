@@ -55,8 +55,8 @@ function show(tab) {
 $$('aside nav button').forEach(b => b.onclick = () => show(b.dataset.tab));
 
 // ---- dashboard ----
-function gotoPay(m) { $('#attMonth').value = m; show('att'); }
-function gotoAttendance() { $('#attMonth').value = today.slice(0, 7); show('att'); }
+function gotoPay(m) { $('#attMonth').value = m; attView = 'month'; show('att'); }
+function gotoAttendance() { $('#attMonth').value = today.slice(0, 7); attView = 'day'; selDay = today; show('att'); }
 let dashD = null, dashP = null;
 const shiftYm = (m, n) => { const [Y, M] = m.split('-').map(Number), d = new Date(Y, M - 1 + n, 1); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}`; };
 async function dashGo(m) { try { dashP = await api('/summary?month=' + m); renderDash(); } catch (e) { toast(e.message); } }
@@ -206,11 +206,70 @@ const renderAtt = () => {
   $('#roleChipsAtt').innerHTML = chipsHTML(payRows);
   $('#attGrid').innerHTML = payRows.map((r, i) => roleOk(r) ? card(r, i) : '').join('') || '<div class="panel empty" style="padding:2rem">এই মাসে কোনো কর্মীর হিসাব নেই।</div>';
   paySum();
+  applyView();
+  if (isDayView()) renderDay();
 };
 const refreshCard = async el => {
   const i = +el.dataset.i, open = !!el.querySelector('details.more[open]'); payRows = (await api('/payroll?month=' + $('#attMonth').value)).filter(r => r.inMonth);
   el.outerHTML = card(payRows[i], i, open); paySum();
 };
+// ---- daily attendance: one line per staff, one tap ----
+let attView = 'day', selDay = today, saving = false;
+const isDayView = () => attView === 'day';
+function renderDay() {
+  const m = $('#attMonth').value, [Y, M] = m.split('-').map(Number);
+  const dates = Array.from({ length: new Date(Y, M, 0).getDate() }, (_, k) => `${m}-${pad(k + 1)}`);
+  // বাছাই করা দিন যেন সবসময় বাছাই করা মাসের ভেতরে থাকে
+  if (!selDay.startsWith(m)) selDay = m === today.slice(0, 7) ? today : dates[0];
+  const wd = d => new Date(d + 'T00:00').getDay();
+  const old = $('#dayView .dstrip'), left = old ? old.scrollLeft : null;
+  const strip = dates.map(d => `<button type="button" class="dpick ${d === selDay ? 'on' : ''} ${wd(d) === 5 ? 'wk' : ''}" data-day="${d}" ${d > today ? 'disabled' : ''}><small>${W[wd(d)]}</small><b>${bnNum(+d.slice(8))}</b></button>`).join('');
+  const list = payRows.filter(roleOk);
+  let present = 0, absent = 0;
+  const rows = list.map(r => {
+    const pre = selDay < String(r.joinDate || '').slice(0, 10), off = offSet.has(r.id + selDay);
+    if (!pre) off ? absent++ : present++;
+    const btn = (isOff, label) => `<button type="button" class="${off === isOff ? (isOff ? 'on off' : 'on ok') : ''}" data-s="${r.id}" data-off="${isOff ? 1 : 0}" aria-pressed="${off === isOff}" aria-label="${esc(r.name)} — ${label}">${label}</button>`;
+    return `<li class="roll"><div class="roll-nm"><b>${esc(r.name)}</b><span class="sub">${esc(rLabel(r.role))}</span></div>${pre ? '<span class="sub">যোগদানের আগে</span>' : `<div class="att-seg">${btn(false, 'উপস্থিত')}${btn(true, 'অনুপস্থিত')}</div>`}</li>`;
+  }).join('');
+  const title = new Date(selDay + 'T00:00').toLocaleDateString('bn-BD', { weekday: 'long', day: 'numeric', month: 'long' });
+  $('#dayView').innerHTML = !list.length ? '<div class="panel empty" style="padding:2rem">এই মাসে কোনো কর্মীর হিসাব নেই।</div>'
+    : `<div class="dstrip">${strip}</div><div class="panel"><div class="day-head"><h3>${title}${selDay === today ? ' (আজ)' : ''}</h3><div class="day-counts"><span class="count ok">উপস্থিত ${bnNum(present)}</span><span class="count off">অনুপস্থিত ${bnNum(absent)}</span></div></div><p class="sub day-tip">সবাই আগে থেকেই উপস্থিত ধরা আছে। শুধু যে আসেনি তার "অনুপস্থিত" চাপুন।</p><ul class="rolls">${rows}</ul></div>`;
+  const s = $('#dayView .dstrip');
+  if (s) { // বাছাই করা দিনটি চোখের সামনে রাখা
+    if (left !== null) s.scrollLeft = left;
+    else { const on = s.querySelector('.on'); if (on) s.scrollLeft = on.offsetLeft - s.offsetLeft - s.clientWidth / 2; }
+  }
+}
+function applyView() {
+  const day = isDayView();
+  $$('#viewSwitch button').forEach(b => b.classList.toggle('on', b.dataset.view === attView));
+  $('#dayView').hidden = !day;
+  ['#attGrid', '#att .hint', '#att .legend', '#payAll', '#csvBtn'].forEach(sel => $(sel).hidden = day);
+}
+$('#viewSwitch').onclick = e => { const b = e.target.closest('button'); if (b) { attView = b.dataset.view; renderAtt(); } };
+// আগের তারিখ বদলাতে নিশ্চিতকরণ
+async function confirmPast(r, d, absent) {
+  if (d >= today) return true;
+  const label = new Date(d + 'T00:00').toLocaleDateString('bn-BD', { weekday: 'short', day: 'numeric', month: 'short' }), warn = r.paid ? ' বেতন ইতিমধ্যে পরিশোধ হয়েছে!' : '';
+  return askConfirm('আগের দিনের হাজিরা বদলাবেন?', absent ? `${label} তারিখে ${r.name}-কে অনুপস্থিত দেখানো আছে। উপস্থিত করবেন?${warn}` : `${label} তারিখে ${r.name}-কে অনুপস্থিত করবেন? এতে এই মাসের বেতনের হিসাব বদলাবে।${warn}`, absent ? 'উপস্থিত করুন' : 'অনুপস্থিত করুন');
+}
+$('#dayView').onclick = safe(async e => {
+  const b = e.target.closest('button'); if (!b || b.disabled) return;
+  if (b.dataset.day) { selDay = b.dataset.day; return renderDay(); }
+  const { s, off } = b.dataset; if (!s || saving) return;
+  const r = payRows.find(x => x.id === s), d = selDay, absent = offSet.has(s + d);
+  if ((off === '1') === absent) return; // আগে থেকেই এই অবস্থায় আছে
+  if (!await confirmPast(r, d, absent)) return;
+  saving = true; // দুইবার চাপ পড়লে হাজিরা যেন উল্টে না যায়
+  try {
+    const res = await api('/attendance', 'PUT', { staff: s, date: d });
+    res.off ? offSet.add(s + d) : offSet.delete(s + d);
+    payRows = (await api('/payroll?month=' + $('#attMonth').value)).filter(x => x.inMonth);
+    renderAtt();
+  } finally { saving = false; }
+});
+
 $('#cfX').onclick = () => $('#cfNo').click();
 const askConfirm = (title, text, yes) => new Promise(res => {
   const d = $('#cfDlg'); $('#cfTitle').textContent = title; $('#cfText').textContent = text; $('#cfYes').textContent = yes;
@@ -233,10 +292,7 @@ $('#attGrid').onclick = safe(async e => {
   }
   const c = e.target.closest('.day'); if (!c || c.disabled) return;
   const { s, d } = c.dataset, el = c.closest('.att-card'), r = payRows[+el.dataset.i];
-  if (d < today) { // আগের তারিখ বদলাতে নিশ্চিতকরণ
-    const label = new Date(d + 'T00:00').toLocaleDateString('bn-BD', { weekday: 'short', day: 'numeric', month: 'short' }), absent = c.classList.contains('off');
-    if (!await askConfirm('আগের দিনের হাজিরা বদলাবেন?', absent ? `${label} তারিখে ${r.name}-কে অনুপস্থিত দেখানো আছে। উপস্থিত করবেন?${r.paid ? ' বেতন ইতিমধ্যে পরিশোধ হয়েছে!' : ''}` : `${label} তারিখে ${r.name}-কে অনুপস্থিত করবেন? এতে এই মাসের বেতনের হিসাব বদলাবে।${r.paid ? ' বেতন ইতিমধ্যে পরিশোধ হয়েছে!' : ''}`, absent ? 'উপস্থিত করুন' : 'অনুপস্থিত করুন')) return;
-  }
+  if (!await confirmPast(r, d, c.classList.contains('off'))) return;
   const res = await api('/attendance', 'PUT', { staff: s, date: d }), k = s + d;
   res.off ? offSet.add(k) : offSet.delete(k);
   await refreshCard(el);
@@ -303,4 +359,4 @@ window.loadDash = loadDash;
 window.logout = logout;
 
 // ---- start app ----
-localStorage.token ? boot() : ($('#login').hidden = false);
+localStorage.token ? boot() : ($('#login').hidden = false);

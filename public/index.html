@@ -41,7 +41,9 @@
     </section>
     <section id="att" hidden>
       <div class="head"><div class="title-block"><h2>হাজিরা ও বেতন</h2><p class="page-caption">প্রতি মাসের হাজিরা, ছুটি ও বেতনের হিসাব একসাথে দেখুন।</p></div><div class="tools attendance-tools"><div class="monthnav"><button class="btn ghost" id="mPrev" aria-label="আগের মাস">‹</button><input type="month" id="attMonth" aria-label="মাস বাছুন"><button class="btn ghost" id="mNext" aria-label="পরের মাস">›</button></div><button class="btn" id="payAll">সব বেতন পরিশোধ</button><button class="btn ghost" id="csvBtn">হিসাব ডাউনলোড</button></div></div>
+      <div class="view-switch" id="viewSwitch"><button type="button" data-view="day">দিনের হাজিরা</button><button type="button" data-view="month">মাসের হিসাব ও বেতন</button></div>
       <div id="roleChipsAtt" class="chips"></div>
+      <div id="dayView"></div>
       <p class="hint">অনুপস্থিত দিনে চাপ দিন। প্রতি মাসে ২ দিন ছুটি বেতনসহ—না নিলে জমা হবে। বেতন পরের মাসের ১০ তারিখের মধ্যে দিন।</p>
       <div class="legend" aria-label="হাজিরার চিহ্ন"><span><i class="legend-dot present"></i>উপস্থিত</span><span><i class="legend-dot off"></i>অনুপস্থিত</span><span><i class="legend-dot fut"></i>সামনের দিন</span><span><i class="legend-dot pre"></i>যোগদানের আগে</span><span><i class="legend-dot today"></i>আজ</span></div>
       <div id="attGrid" class="att-cards"></div>
@@ -91,4 +93,4 @@
 <div id="toast"></div>
 <script src="app.js"></script>
 </body>
-</html>
+</html>
