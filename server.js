@@ -49,14 +49,14 @@ async function calculatePayroll(ym) {
       r = { avail, used, unpaid: Math.max(0, used - avail), carry: Math.max(0, avail - used) };
       carry = r.carry; if (++m > 12) { m = 1; y++; }
     }
-    const a = adj.find(x => String(x.staff) === String(s._id)) || {}, daily = s.salary / days;
+    const a = adj.find(x => String(x.staff) === String(s._id)) || {}, daily = s.salary / 30; // দৈনিক বেতন সবসময় মাসিক বেতন ÷ ৩০
     const inMonth = r !== null; // এই মাসে স্টাফ যোগ দিয়েছিল কি না
     r = r || { avail: 0, used: 0, unpaid: 0, carry: 0 };
     const pre = (j.getUTCFullYear() === Y && j.getUTCMonth() + 1 === M) ? j.getUTCDate() - 1 : 0; // যোগদানের আগের দিন
     const base = r.avail ? Math.round(daily * Math.max(0, days - pre - r.unpaid)) : 0;
     return {
       id: s._id, staffId: s.staffId, name: s.name, role: s.role, salary: s.salary, joinDate: s.joinDate, inMonth, pre, days, daily, ...r,
-      deduction: r.avail ? Math.round(daily * (r.unpaid + pre)) : 0, base, bonus: a.bonus || 0, advance: a.advance || 0,
+      deduction: r.avail ? Math.round(daily * days) - base : 0, base, bonus: a.bonus || 0, advance: a.advance || 0,
       net: base + (a.bonus || 0) - (a.advance || 0)
     };
   });
