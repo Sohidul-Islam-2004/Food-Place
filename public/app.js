@@ -57,40 +57,43 @@ $$('aside nav button').forEach(b => b.onclick = () => show(b.dataset.tab));
 // ---- dashboard ----
 function gotoPay(m) { $('#attMonth').value = m; show('att'); }
 function gotoAttendance() { $('#attMonth').value = today.slice(0, 7); show('att'); }
+let dashD = null, dashP = null;
+const shiftYm = (m, n) => { const [Y, M] = m.split('-').map(Number), d = new Date(Y, M - 1 + n, 1); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}`; };
+async function dashGo(m) { try { dashP = await api('/summary?month=' + m); renderDash(); } catch (e) { toast(e.message); } }
 const loadDash = async () => {
-  try {
-    const d = await api('/dashboard'), hr = new Date().getHours(), hi = hr < 12 ? 'শুভ সকাল' : hr < 17 ? 'শুভ বিকেল' : 'শুভ সন্ধ্যা';
-    const present = d.total - d.off.length, pct = d.total ? Math.round(present / d.total * 100) : 0, bal = d.topBalance.filter(r => r.carry), u = d.due;
-    const left = Math.round((new Date(u.dueDate + 'T00:00') - new Date(today + 'T00:00')) / 864e5), all = u.count > 0 && u.paidCount === u.count;
-    const st = all ? ['ok', 'সব বেতন পরিশোধ হয়েছে'] : left < 0 ? ['late', `${bnNum(-left)} দিন দেরি`] : left === 0 ? ['soon', 'আজ বেতন দেওয়ার শেষ দিন'] : ['soon', `আর ${bnNum(left)} দিন বাকি`];
-    const np = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 10);
-    $('#dash').innerHTML = `<div class="head"><div class="title-block"><h2>${hi}</h2><p class="page-caption">আজকের কর্মীদের সারসংক্ষেপ</p></div><span class="date-chip">${new Date().toLocaleDateString('bn-BD', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' })}</span></div>
-    ${u.count ? `<div class="due ${st[0]}">
-      <div><span class="lbl">বকেয়া বেতন · ${monthName(u.month)}</span><b class="amt">৳ ${money(u.total)}</b><span class="state">${st[1]}</span><span class="sub"> · বেতন দেওয়ার তারিখ ${fmtD(u.dueDate)}</span></div>
-      <div><div class="bar" role="progressbar" aria-label="কর্মীদের বেতন পরিশোধের অগ্রগতি" aria-valuemin="0" aria-valuemax="${u.count}" aria-valuenow="${u.paidCount}"><i style="width:${Math.round(u.paidCount / u.count * 100)}%"></i></div><span class="sub">${bnNum(u.count)} জনের মধ্যে ${bnNum(u.paidCount)} জনের বেতন পরিশোধ · ৳ ${money(u.paidAmount)} পরিশোধিত</span></div>
-      <button class="btn" onclick="gotoPay('${u.month}')">${all ? 'বেতন দেখুন' : 'বেতন পরিশোধ'}</button></div>` : ''}
-    <section class="dashboard-actions" aria-label="দ্রুত কাজ">
-      <div class="action-heading"><h3>দ্রুত কাজ</h3><p class="sub">সাধারণ কাজ</p></div>
-      <div class="qa">
-        <button class="btn" onclick="gotoAttendance()"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M16 3v4M8 3v4M3 10h18M8 14h2M14 14h2M8 17h2"></path></svg><span>হাজিরা নিন</span></button>
-        <button class="btn ghost" onclick="show('staff');openForm()"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20v-1.2A5.3 5.3 0 0 1 7.8 13h2.4a5.3 5.3 0 0 1 5.3 5.3V20"></path><path d="M19 8v6M16 11h6"></path></svg><span>কর্মী যোগ করুন</span></button>
-      </div>
-    </section>
-    <div class="stats">
-      <div class="stat s-blue"><span>সক্রিয় কর্মী</span><b>${bnNum(d.total)}</b><span class="sub">বর্তমানে কর্মরত</span></div>
-      <div class="stat s-green"><span>আজ উপস্থিত</span><b>${bnNum(present)}</b><div class="bar"><i style="width:${pct}%"></i></div><span class="sub">মোট কর্মীর ${bnNum(pct)}%</span></div>
-      <div class="stat s-red"><span>আজ অনুপস্থিত</span><b>${bnNum(d.off.length)}</b><span class="sub">${d.off.length ? 'অনুপস্থিত হিসেবে চিহ্নিত' : 'সবাই উপস্থিত'}</span></div>
-      <div class="stat s-amber"><span>এ মাসের মোট বেতন</span><b>৳ ${money(d.payroll)}</b><span class="sub">দেওয়ার তারিখ ${fmtD(np)} · মূল বেতন ৳ ${money(d.monthlyBase)}</span></div>
-    </div>
-    <div class="two">
-      <div class="panel"><h3 class="panel-title">আজ অনুপস্থিত <span class="pill">${bnNum(d.off.length)}</span></h3><ul>${d.off.map(s => `<li><span class="dotname"><i class="dot bad"></i>${esc(s.name)}</span><span class="sub">${esc(rLabel(s.role))}</span></li>`).join('') || '<li class="empty">আজ সবাই উপস্থিত।</li>'}</ul></div>
-      <div class="panel"><h3 class="panel-title">জমা ছুটি <span class="pill">${bnNum(bal.length)} জন</span></h3><ul>${bal.map(r => `<li><span class="dotname"><i class="dot ok"></i>${esc(r.name)}</span><span class="pill">${bnNum(r.carry)} দিন</span></li>`).join('') || '<li class="empty">এখনো কোনো ছুটি জমা নেই।</li>'}</ul></div>
-    </div>
-    <div class="mobile-out"><button class="btn ghost" onclick="window.$('#pwDlg').showModal()">পাসওয়ার্ড বদলান</button> <button class="btn ghost" onclick="window.logout()">বের হন</button></div>`;
-  } catch (e) {
-    $('#dash').innerHTML = `<div class="panel"><h3>সারসংক্ষেপ দেখানো যাচ্ছে না</h3><p class="bad">${esc(e.message)}</p><button class="btn" onclick="window.loadDash()">আবার চেষ্টা করুন</button></div>`;
-  }
+  try { dashD = await api('/dashboard'); dashP = dashD.pay.prev.count ? dashD.pay.prev : dashD.pay.cur; renderDash(); }
+  catch (e) { $('#dash').innerHTML = `<div class="panel"><h3>সারসংক্ষেপ দেখানো যাচ্ছে না</h3><p class="bad">${esc(e.message)}</p><button class="btn" onclick="window.loadDash()">আবার চেষ্টা করুন</button></div>`; }
 };
+function renderDash() {
+  const d = dashD, p = dashP, hr = new Date().getHours(), hi = hr < 12 ? 'শুভ সকাল' : hr < 17 ? 'শুভ বিকেল' : 'শুভ সন্ধ্যা';
+  const present = d.total - d.off.length, all = p.count > 0 && p.paidCount === p.count;
+  const left = Math.round((new Date(p.dueDate + 'T00:00') - new Date(today + 'T00:00')) / 864e5);
+  const st = all ? ['ok', 'পরিশোধিত'] : left < 0 ? ['late', `${bnNum(-left)} দিন দেরি`] : left === 0 ? ['soon', 'আজ শেষ দিন'] : ['soon', `আর ${bnNum(left)} দিন বাকি`];
+  $('#dash').innerHTML = `<div class="head"><div class="title-block"><h2>${hi}</h2><p class="page-caption">আজকের হাজিরা ও বেতনের সারসংক্ষেপ</p></div><span class="date-chip">${new Date().toLocaleDateString('bn-BD', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' })}</span></div>
+  <section class="dsec"><h3 class="dsec-t">আজকের হাজিরা</h3>
+    <div class="stat3">
+      <div class="stat s-blue"><span>মোট কর্মী</span><b>${bnNum(d.total)}</b></div>
+      <div class="stat s-green"><span>উপস্থিত</span><b>${bnNum(present)}</b></div>
+      <div class="stat s-red"><span>অনুপস্থিত</span><b>${bnNum(d.off.length)}</b></div>
+    </div>
+    ${d.off.length ? `<p class="absent-line"><i class="dot bad"></i>অনুপস্থিত: ${d.off.map(s => esc(s.name)).join(', ')}</p>` : ''}
+  </section>
+  <section class="dsec"><h3 class="dsec-t">বেতন</h3>
+    <div class="salary">
+      <div class="sal-top">
+        <div class="mpick"><button class="mn" onclick="dashGo('${shiftYm(p.month, -1)}')" ${p.count ? '' : 'disabled'} aria-label="আগের মাস">‹</button><b>${monthName(p.month)}</b><button class="mn" onclick="dashGo('${shiftYm(p.month, 1)}')" ${p.month >= today.slice(0, 7) ? 'disabled' : ''} aria-label="পরের মাস">›</button></div>
+        ${p.count ? `<span class="state-chip ${st[0]}">${all ? ICON_CHECK : ''}${st[1]}</span>` : ''}
+      </div>
+      ${p.count ? `<ul class="rows"><li><span>মোট বেতন</span><b>৳ ${money(p.gross)}</b></li><li><span>মোট কর্তন</span><b class="bad">${p.deduction ? '−' : ''}৳ ${money(p.deduction)}</b></li>${p.bonus || p.advance ? `<li><span>বোনাস ও অগ্রিম</span><b>${p.bonus ? '+৳ ' + money(p.bonus) : ''} ${p.advance ? '−৳ ' + money(p.advance) : ''}</b></li>` : ''}<li class="tot"><span>কর্তনের পর মোট বেতন</span><b>৳ ${money(p.net)}</b></li></ul>
+      <div class="sal-right">${all
+        ? `<div class="paid-ok"><span class="bigtick">${ICON_CHECK}</span><b>পরিশোধিত</b><small>${bnNum(p.count)} জনের মোট ৳ ${money(p.paidAmount)}</small></div><button class="btn ghost" onclick="gotoPay('${p.month}')">বেতন দেখুন</button>`
+        : `<div class="paystat"><div class="ok"><span>পরিশোধিত</span><b>৳ ${money(p.paidAmount)}</b><small>${bnNum(p.paidCount)}/${bnNum(p.count)} জন</small></div><div class="${p.remaining ? 'wait' : 'ok'}"><span>বাকি</span><b>৳ ${money(p.remaining)}</b><small>${bnNum(p.count - p.paidCount)} জন</small></div></div><button class="btn" onclick="gotoPay('${p.month}')">বেতন পরিশোধ করুন</button>`}
+      </div>` : '<p class="empty-sal" style="grid-column:1/-1">এই মাসের কোনো হিসাব নেই।</p>'}
+    </div>
+  </section>
+  <div class="qa"><button class="btn ghost" onclick="gotoAttendance()">হাজিরা নিন</button><button class="btn ghost" onclick="show('staff');openForm()">কর্মী যোগ করুন</button></div>
+  <div class="mobile-out"><button class="btn ghost" onclick="window.$('#pwDlg').showModal()">পাসওয়ার্ড বদলান</button> <button class="btn ghost" onclick="window.logout()">বের হন</button></div>`;
+}
 
 // ---- staff ----
 const loadStaff = safe(async () => { staff = await api('/staff?status=active'); fillRoles(staff); renderStaff(); });
@@ -106,16 +109,20 @@ function renderStaff() {
     : roleSel === 'all' && g.size > 1 ? [...g.values()].sort((a, b) => a.label.localeCompare(b.label, 'bn')).map(x => `<section class="grp"><h4 class="grp-h">${esc(x.label)}<span>${bnNum(x.items.length)}</span></h4><div class="staff-cards">${x.items.map(stCard).join('')}</div></section>`).join('')
       : `<div class="staff-cards">${list.map(stCard).join('')}</div>`;
 }
+const ICON_CHECK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+const ICON_X = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+const ICON_TEL = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg>';
 const openView = id => {
   const s = staff.find(x => x._id === id); if (!s) return;
-  const call = (l, p) => p ? `<a class="callbtn" href="tel:${esc(p)}"><span>${l}</span><b>${esc(p)}</b></a>` : `<div class="callbtn off"><span>${l}</span><b>-</b></div>`;
-  $('#viewBody').innerHTML = `<div class="vh"><div class="nm"><h3>${esc(s.name)}</h3><div class="sub">${s.age ? bnNum(s.age) + ' বছর · ' : ''}${esc(rLabel(s.role))}</div></div><button type="button" class="x" data-vclose aria-label="বন্ধ করুন">×</button></div>
-  <div class="vbody">
-    <section class="vsec"><h4>কাজের তথ্য</h4><dl class="kv"><div><dt>মাসিক বেতন</dt><dd>৳ ${money(s.salary)}</dd></div><div><dt>দৈনিক কাজের সময়</dt><dd>${s.dutyHour ? bnNum(s.dutyHour) + ' ঘণ্টা' : '-'}</dd></div><div><dt>যোগদানের তারিখ</dt><dd>${fmtD(s.joinDate)}</dd></div><div><dt>পদ</dt><dd>${esc(rLabel(s.role))}</dd></div></dl></section>
-    <section class="vsec"><h4>যোগাযোগ</h4><div class="calls">${call('নিজের ফোন', s.phonePersonal)}${call('পরিবারের ফোন', s.phoneFamily)}</div></section>
-    <section class="vsec"><h4>ঠিকানা</h4><dl class="kv one"><div><dt>বর্তমান</dt><dd>${esc(s.presentAddress || '-')}</dd></div><div><dt>স্থায়ী</dt><dd>${esc(s.permanentAddress || '-')}</dd></div></dl></section>
+  const call = (l, p) => `<div class="pf-row"><div class="t"><span>${l}</span><b>${p ? esc(p) : 'দেওয়া নেই'}</b></div>${p ? `<a class="callbtn2" href="tel:${esc(p)}" aria-label="কল করুন">${ICON_TEL}</a>` : ''}</div>`;
+  $('#viewBody').innerHTML = `<div class="pf-head"><button type="button" class="x abs" data-vclose aria-label="বন্ধ করুন">${ICON_X}</button><h3>${esc(s.name)}</h3><div class="pf-tags"><span class="tag">${esc(rLabel(s.role))}</span>${s.age ? `<span class="tag soft">${bnNum(s.age)} বছর</span>` : ''}</div></div>
+  <div class="pf-body">
+    <div class="pf-pay"><span>মাসিক বেতন</span><b>৳ ${money(s.salary)}</b></div>
+    <div class="pf-two"><div class="pf-box"><span>যোগদান</span><b>${fmtD(s.joinDate)}</b></div><div class="pf-box"><span>দৈনিক কাজ</span><b>${s.dutyHour ? bnNum(s.dutyHour) + ' ঘণ্টা' : 'দেওয়া নেই'}</b></div></div>
+    <section><h4>যোগাযোগ</h4>${call('নিজের ফোন', s.phonePersonal)}${call('পরিবারের ফোন', s.phoneFamily)}</section>
+    <section><h4>ঠিকানা</h4><div class="addr"><span>বর্তমান</span><p>${esc(s.presentAddress || 'দেওয়া নেই')}</p></div><div class="addr"><span>স্থায়ী</span><p>${esc(s.permanentAddress || 'দেওয়া নেই')}</p></div></section>
   </div>
-  <div class="actions"><button type="button" class="btn ghost rm" data-rm="${s._id}">কর্মী সরান</button><button type="button" class="btn" data-edit="${s._id}">তথ্য বদলান</button></div>`;
+  <div class="pf-foot"><button type="button" class="btn ghost danger" data-rm="${s._id}">কর্মী সরান</button><button type="button" class="btn" data-edit="${s._id}">তথ্য বদলান</button></div>`;
   $('#viewDlg').showModal();
 };
 $('#staffGrid').onclick = e => { const c = e.target.closest('.st-card'); if (c) openView(c.dataset.id); };
@@ -135,12 +142,13 @@ window.openForm = id => {
   $('#dlgTitle').textContent = id ? 'কর্মীর তথ্য বদলান' : 'কর্মী যোগ করুন';
   const s = staff.find(x => x._id === id) || {};
   [...f.elements].forEach(el => { if (el.name) el.value = el.name === 'joinDate' ? String(s.joinDate || today).slice(0, 10) : (s[el.name] ?? ''); });
+  if (!id) f.elements.trackFrom.value = today.slice(0, 7); else if (!s.trackFrom) f.elements.trackFrom.value = String(s.joinDate).slice(0, 7);
   $('#dlg').showModal();
 };
 $('#form').onsubmit = safe(async e => {
   e.preventDefault(); const d = Object.fromEntries(new FormData(e.target));
   ['age', 'dutyHour'].forEach(k => d[k] = d[k] === '' ? null : +d[k]);
-  d.salary = d.salary === '' ? 0 : +d.salary;
+  d.salary = d.salary === '' ? 0 : +d.salary; d.openLeave = d.openLeave === '' ? 0 : +d.openLeave; if (!d.trackFrom) delete d.trackFrom;
   await api(editId ? '/staff/' + editId : '/staff', editId ? 'PUT' : 'POST', d); $('#dlg').close(); toast('কর্মীর তথ্য সংরক্ষণ করা হয়েছে'); loadStaff();
 });
 window.setStatus = safe(async (id, status) => {
@@ -155,7 +163,7 @@ const shiftMonth = n => { const [Y, M] = $('#attMonth').value.split('-').map(Num
 $('#mPrev').onclick = () => shiftMonth(-1); $('#mNext').onclick = () => shiftMonth(1);
 const FREE = 2, W = ['রবি', 'সোম', 'মঙ্গল', 'বুধ', 'বৃহঃ', 'শুক্র', 'শনি'];
 let offSet = new Set();
-function card(r, i) {
+function card(r, i, open) {
   const m = $('#attMonth').value, [Y, M] = m.split('-').map(Number), first = new Date(Y, M - 1, 1).getDay(), carried = Math.max(0, r.avail - FREE);
   const join = String(r.joinDate || '').slice(0, 10);
   const days = Array.from({ length: r.days }, (_, k) => {
@@ -165,32 +173,27 @@ function card(r, i) {
     return `<button class="day ${st} ${date === today ? 'today' : ''}" data-s="${r.id}" data-d="${date}" ${lock ? 'disabled' : ''} title="${tip}" aria-label="${esc(r.name)} — ${date}, ${tip}">${bnNum(k + 1)}</button>`;
   }).join('');
   const pd = r.paid
-    ? `<span class="paid-chip">পরিশোধিত · ${fmtD(r.paid.paidAt)} · ৳ ${money(r.paid.amount)}${r.paid.amount !== r.net ? ' <em>(বেতনের অঙ্ক বদলেছে)</em>' : ''}</span><button class="small" data-unpay="1">পরিশোধ বাতিল</button>`
-    : `<button class="btn sm" data-pay="1">বেতন পরিশোধ</button>`;
-  return `<article class="att-card" data-i="${i}">
-  <header><div class="nm"><b>${esc(r.name)}</b><div class="sub">${esc(rLabel(r.role))}</div></div><div class="np"><span>নিট বেতন</span><b>৳ ${money(r.net)}</b></div></header>
+    ? `<div class="pst is-paid"><span class="paid-chip">${ICON_CHECK}পরিশোধিত · ${fmtD(r.paid.paidAt)} · ৳ ${money(r.paid.amount)}${r.paid.amount !== r.net ? ' <em>(বেতনের অঙ্ক বদলেছে)</em>' : ''}</span></div><div class="acts"><button class="small" data-unpay="1">পরিশোধ বাতিল</button><button class="small" onclick="window.slip(${i})">বেতনপত্র</button></div>`
+    : `<div class="acts"><button class="btn sm" data-pay="1">বেতন পরিশোধ</button><button class="small" onclick="window.slip(${i})">বেতনপত্র</button></div>`;
+  return `<article class="att-card${r.paid ? ' is-paid' : ''}" data-i="${i}">
+  <header><div class="nm"><b>${esc(r.name)}</b><div class="sub">${esc(rLabel(r.role))}</div></div>${r.paid ? `<span class="tick" title="পরিশোধিত">${ICON_CHECK}</span>` : ''}<div class="np"><span>নিট বেতন</span><b>৳ ${money(r.net)}</b></div></header>
   <div class="cal">${W.map((w, k) => `<i class="dow ${k === 5 ? 'wk' : ''}">${w}</i>`).join('')}${'<span></span>'.repeat(first)}${days}</div>
-  <div class="leave">
-    <div class="${r.carry ? 'ok' : ''}"><b>${bnNum(r.carry)}</b><span>বাকি ছুটি<small>${r.carry ? 'ব্যবহারযোগ্য' : 'আর ছুটি নেই'}</small></span></div>
-    <div><b>${bnNum(r.used)}</b><span>অনুপস্থিতি</span></div>
-    <div class="${r.unpaid ? 'bad' : ''}"><b>${bnNum(r.unpaid)}</b><span>${r.unpaid ? 'বিনা বেতনের দিন' : 'বিনা বেতনের ছুটি নেই'}<small>${r.unpaid ? `কাটা হয়েছে ৳ ${money(Math.round(r.daily * r.unpaid))}` : 'অতিরিক্ত ছুটি নেই'}</small></span></div>
-  </div>
-  <dl class="pay">
+  <p class="leave-line">${r.unpaid ? `<span class="bad">${bnNum(r.unpaid)} দিনের বেতন কাটা (−৳ ${money(Math.round(r.daily * r.unpaid))})</span>` : r.used ? `${bnNum(r.used)} দিন ছুটি নিয়েছেন` : 'এ মাসে ছুটি নেননি'}<span class="sep">·</span>বাকি ছুটি <b>${bnNum(r.carry)}</b> দিন</p>
+  <details class="more"${open ? ' open' : ''}><summary>বেতনের হিসাব</summary><dl class="pay">
     <div><dt>মাসিক বেতন</dt><dd>৳ ${money(r.salary)}</dd></div>
     <div><dt>দৈনিক বেতন</dt><dd>৳ ${bnNum(r.daily, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</dd></div>
     <div><dt>কর্তন${r.pre ? `<small>যোগদানের আগে ${bnNum(r.pre)} দিন</small>` : ''}</dt><dd class="${r.deduction ? 'bad' : ''}">${r.deduction ? '−৳ ' + money(r.deduction) : '—'}</dd></div>
     <div><dt>বোনাস</dt><dd><input class="n" type="number" min="0" value="${r.bonus}" aria-label="${esc(r.name)}-এর বোনাস"></dd></div>
     <div><dt>অগ্রিম</dt><dd><input class="n" type="number" min="0" value="${r.advance}" aria-label="${esc(r.name)}-এর অগ্রিম"></dd></div>
-  </dl>
-  <footer><div class="pst${r.paid ? ' is-paid' : ''}">${pd}</div><button class="small" onclick="window.slip(${i})">বেতনপত্র</button></footer></article>`;
+  </dl></details>
+  <footer>${pd}</footer></article>`;
 }
 const monthName = m => new Date(m + '-01T00:00').toLocaleDateString('bn-BD', { month: 'long', year: 'numeric' });
 const payDate = m => { const [Y, M] = m.split('-').map(Number); return fmtD(new Date(Y, M, 10)); };
 const paySum = () => {
-  const vis = payRows.filter(roleOk), t = k => vis.reduce((a, r) => a + (+r[k] || 0), 0), paid = vis.filter(r => r.paid), m = $('#attMonth').value;
-  const paidAmt = paid.reduce((a, r) => a + r.paid.amount, 0), rem = vis.filter(r => !r.paid).reduce((a, r) => a + r.net, 0);
-  $('#paySummary').innerHTML = [['s-blue', 'মোট বেতন', '৳ ' + money(t('net')), 'দেওয়ার তারিখ ' + payDate(m)], ['s-green', 'পরিশোধিত', '৳ ' + money(paidAmt), `পরিশোধিত কর্মী: ${bnNum(paid.length)} / ${bnNum(vis.length)} জন`], ['s-amber', 'বাকি', '৳ ' + money(rem), rem ? 'এখনো পরিশোধ করতে হবে' : 'সব বেতন পরিশোধ হয়েছে'], ['s-red', 'মোট কর্তন', '৳ ' + money(t('deduction')), `বোনাস ৳ ${money(t('bonus'))}<br>অগ্রিম ৳ ${money(t('advance'))}`]]
-    .map(([c, a, b, s]) => `<div class="stat ${c}"><span>${a}</span><b>${b}</b><span class="sub">${s}</span></div>`).join('');
+  const vis = payRows.filter(roleOk), b = $('#payAll'), done = vis.length > 0 && vis.every(r => r.paid);
+  b.classList.toggle('done', done); b.disabled = done || !vis.length;
+  b.innerHTML = done ? ICON_CHECK + 'সব পরিশোধিত' : 'সব বেতন পরিশোধ';
 };
 const loadAtt = safe(async () => {
   const m = $('#attMonth').value; if (!m) return;
@@ -201,13 +204,14 @@ const loadAtt = safe(async () => {
 });
 const renderAtt = () => {
   $('#roleChipsAtt').innerHTML = chipsHTML(payRows);
-  $('#attGrid').innerHTML = payRows.map((r, i) => roleOk(r) ? card(r, i) : '').join('') || '<div class="panel empty" style="padding:2rem">আগে কর্মী যোগ করুন।</div>';
+  $('#attGrid').innerHTML = payRows.map((r, i) => roleOk(r) ? card(r, i) : '').join('') || '<div class="panel empty" style="padding:2rem">এই মাসে কোনো কর্মীর হিসাব নেই।</div>';
   paySum();
 };
 const refreshCard = async el => {
-  const i = +el.dataset.i; payRows = (await api('/payroll?month=' + $('#attMonth').value)).filter(r => r.inMonth);
-  el.outerHTML = card(payRows[i], i); paySum();
+  const i = +el.dataset.i, open = !!el.querySelector('details.more[open]'); payRows = (await api('/payroll?month=' + $('#attMonth').value)).filter(r => r.inMonth);
+  el.outerHTML = card(payRows[i], i, open); paySum();
 };
+$('#cfX').onclick = () => $('#cfNo').click();
 const askConfirm = (title, text, yes) => new Promise(res => {
   const d = $('#cfDlg'); $('#cfTitle').textContent = title; $('#cfText').textContent = text; $('#cfYes').textContent = yes;
   const done = v => { d.onclose = null; d.close(); res(v); };

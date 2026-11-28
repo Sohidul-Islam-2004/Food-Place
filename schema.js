@@ -18,6 +18,8 @@ const staffSchema = new Schema({
   permanentAddress: String,
   salary: { type: Number, required: true, min: 0 },
   joinDate: { type: Date, default: Date.now },
+  trackFrom: String, // 'YYYY-MM' — এই মাস থেকে সিস্টেমে হিসাব শুরু
+  openLeave: { type: Number, default: 0, min: 0 }, // হিসাব শুরুর আগে থেকে জমা ছুটি
   status: { type: String, enum: ['active', 'archived'], default: 'active' }
 }, { timestamps: true });
 

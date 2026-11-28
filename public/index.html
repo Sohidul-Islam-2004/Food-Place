@@ -42,8 +42,7 @@
     <section id="att" hidden>
       <div class="head"><div class="title-block"><h2>হাজিরা ও বেতন</h2><p class="page-caption">প্রতি মাসের হাজিরা, ছুটি ও বেতনের হিসাব একসাথে দেখুন।</p></div><div class="tools attendance-tools"><div class="monthnav"><button class="btn ghost" id="mPrev" aria-label="আগের মাস">‹</button><input type="month" id="attMonth" aria-label="মাস বাছুন"><button class="btn ghost" id="mNext" aria-label="পরের মাস">›</button></div><button class="btn" id="payAll">সব বেতন পরিশোধ</button><button class="btn ghost" id="csvBtn">হিসাব ডাউনলোড</button></div></div>
       <div id="roleChipsAtt" class="chips"></div>
-      <div id="paySummary" class="stats"></div>
-      <p class="hint">প্রতি মাসের বেতন পরের মাসের ১০ তারিখের মধ্যে দিন। বেতন দেওয়ার পর “বেতন পরিশোধ” চাপুন—রেকর্ড সংরক্ষিত থাকবে। প্রতি মাসে ২ দিন বেতনসহ ছুটি; না নিলে পরের মাসে যোগ হবে। অনুপস্থিতি চিহ্নিত করতে সংশ্লিষ্ট তারিখে চাপ দিন। যোগদানের আগের ও ভবিষ্যতের তারিখ বদলানো যাবে না।</p>
+      <p class="hint">অনুপস্থিত দিনে চাপ দিন। প্রতি মাসে ২ দিন ছুটি বেতনসহ—না নিলে জমা হবে। বেতন পরের মাসের ১০ তারিখের মধ্যে দিন।</p>
       <div class="legend" aria-label="হাজিরার চিহ্ন"><span><i class="legend-dot present"></i>উপস্থিত</span><span><i class="legend-dot off"></i>অনুপস্থিত</span><span><i class="legend-dot fut"></i>সামনের দিন</span><span><i class="legend-dot pre"></i>যোগদানের আগে</span><span><i class="legend-dot today"></i>আজ</span></div>
       <div id="attGrid" class="att-cards"></div>
     </section>
@@ -52,17 +51,22 @@
 
 <dialog id="dlg">
   <form id="form" method="dialog">
-    <header class="dlg-head"><h3 id="dlgTitle">কর্মী যোগ করুন</h3><button type="button" class="x" data-close aria-label="বন্ধ করুন">×</button></header>
+    <header class="dlg-head"><h3 id="dlgTitle">কর্মী যোগ করুন</h3><button type="button" class="x" data-close aria-label="বন্ধ করুন"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></header>
     <div class="dlg-body">
       <section class="sec"><h4>ব্যক্তিগত তথ্য</h4><div class="fields">
         <label class="wide">পুরো নাম<input name="name" placeholder="যেমন: রহিম উদ্দিন" required></label>
         <label>পদ<input name="role" list="roleList" placeholder="যেমন: রাঁধুনি, পরিচ্ছন্নতাকর্মী" autocomplete="off"></label><datalist id="roleList"></datalist>
-        <label>বয়স<input name="age" type="number" min="14" max="90"></label>
+        <label>বয়স<input name="age" type="number" inputmode="numeric" min="14" max="90"></label>
       </div></section>
       <section class="sec"><h4>কাজ ও বেতন</h4><div class="fields">
-        <label>মাসিক বেতন (৳)<input name="salary" type="number" min="0" required></label>
-        <label>দৈনিক কাজের সময় (ঘণ্টা)<input name="dutyHour" type="number" min="1" max="24"></label>
+        <label class="wide">মাসিক বেতন (৳)<input name="salary" type="number" inputmode="numeric" min="0" required></label>
+        <label>দৈনিক কাজের সময় (ঘণ্টা)<input name="dutyHour" type="number" inputmode="numeric" min="1" max="24"></label>
         <label>যোগদানের তারিখ<input name="joinDate" type="date"></label>
+      </div></section>
+      <section class="sec"><h4>ছুটির হিসাব</h4><div class="fields">
+        <label>হিসাব শুরুর মাস<input name="trackFrom" type="month"></label>
+        <label>আগে থেকে জমা ছুটি (দিন)<input name="openLeave" type="number" inputmode="numeric" min="0" step="1" placeholder="০"></label>
+        <p class="field-hint">আগের মাসের হাজিরা তোলার দরকার নেই। এখন পর্যন্ত কত দিন ছুটি জমা আছে শুধু সেটা লিখুন। প্রতি মাসে ২ দিন করে নতুন ছুটি যোগ হবে।</p>
       </div></section>
       <section class="sec"><h4>যোগাযোগের তথ্য</h4><div class="fields">
         <label>নিজের ফোন নম্বর<input name="phonePersonal" type="tel" placeholder="01XXXXXXXXX"></label>
@@ -77,13 +81,13 @@
 <dialog id="viewDlg"><div id="viewBody"></div></dialog>
 <dialog id="pwDlg">
   <form id="pwForm" method="dialog">
-    <h3>পাসওয়ার্ড বদলান</h3>
+    <header class="dlg-head"><h3>পাসওয়ার্ড বদলান</h3><button type="button" class="x" data-close aria-label="বন্ধ করুন"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></header>
     <div class="fields one"><label>বর্তমান পাসওয়ার্ড<input name="current" type="password" required></label>
     <label>নতুন পাসওয়ার্ড<input name="next" type="password" minlength="6" required></label></div>
     <div class="actions"><button type="button" class="link" data-close>বাতিল</button><button class="btn">হালনাগাদ করুন</button></div>
   </form>
 </dialog>
-<dialog id="cfDlg"><div class="cf"><h3 id="cfTitle"></h3><p id="cfText"></p><div class="actions"><button type="button" class="btn ghost" id="cfNo">না, ফিরে যান</button><button type="button" class="btn" id="cfYes">হ্যাঁ, করুন</button></div></div></dialog>
+<dialog id="cfDlg"><div class="cf"><button type="button" class="x abs" id="cfX" aria-label="বন্ধ করুন"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button><h3 id="cfTitle"></h3><p id="cfText"></p><div class="actions"><button type="button" class="btn ghost" id="cfNo">না, ফিরে যান</button><button type="button" class="btn" id="cfYes">হ্যাঁ, করুন</button></div></div></dialog>
 <div id="toast"></div>
 <script src="app.js"></script>
 </body>

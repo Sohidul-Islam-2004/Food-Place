@@ -1012,7 +1012,7 @@ dialog form {
 
 .day.fut {
     background: #151d29;
-        color: #ffffff;
+    color: #ffffff;
 }
 
 .day.pre {
@@ -1852,5 +1852,1102 @@ aside nav button.on {
         flex: 1;
         min-width: 0;
         text-align: center
+    }
+}
+
+/* ================= v4: dashboard, popups, close buttons ================= */
+.x {
+    display: inline-grid;
+    place-items: center;
+    flex: none;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    font-size: 0;
+    border-radius: 50%;
+    border: 1px solid var(--line);
+    background: #fff;
+    color: var(--ink);
+    cursor: pointer;
+    box-shadow: var(--sh);
+    transition: background .15s, transform .1s
+}
+
+.x svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.2;
+    stroke-linecap: round
+}
+
+.x:hover {
+    background: var(--bg)
+}
+
+.x:active {
+    transform: scale(.92)
+}
+
+.x.abs {
+    position: absolute;
+    top: .85rem;
+    right: .85rem;
+    z-index: 2
+}
+
+#pwDlg h3,
+.dlg-head h3 {
+    padding: 0
+}
+
+#pwDlg .dlg-head {
+    padding: 1rem 1.4rem
+}
+
+.cf {
+    position: relative
+}
+
+.cf h3 {
+    padding-right: 2.8rem
+}
+
+/* staff profile popup */
+#viewDlg {
+    width: min(480px, calc(100vw - 1.5rem))
+}
+
+.pf-head {
+    position: relative;
+    padding: 1.6rem 1.4rem 1.1rem;
+    background: linear-gradient(180deg, #eaf1ff, #fff)
+}
+
+.pf-head h3 {
+    font-size: 1.55rem;
+    padding-right: 3rem;
+    line-height: 1.3
+}
+
+.pf-tags {
+    display: flex;
+    gap: .4rem;
+    flex-wrap: wrap;
+    margin-top: .6rem
+}
+
+.tag {
+    padding: .22rem .75rem;
+    border-radius: 99px;
+    background: var(--accent-bg);
+    color: var(--accent);
+    font-size: .82rem;
+    font-weight: 700
+}
+
+.tag.soft {
+    background: var(--soft);
+    color: var(--mute);
+    border: 1px solid var(--line);
+    font-weight: 600
+}
+
+.pf-body {
+    padding: .3rem 1.4rem 1.1rem;
+    display: grid;
+    gap: 1.15rem;
+    max-height: 60dvh;
+    overflow: auto
+}
+
+.pf-pay {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: .95rem 1.1rem;
+    background: var(--accent);
+    color: #fff;
+    border-radius: 14px
+}
+
+.pf-pay span {
+    font-weight: 600;
+    opacity: .9
+}
+
+.pf-pay b {
+    font-size: 1.5rem
+}
+
+.pf-two {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .6rem
+}
+
+.pf-box {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: .65rem .85rem
+}
+
+.pf-box span {
+    display: block;
+    font-size: .72rem;
+    color: var(--mute)
+}
+
+.pf-box b {
+    font-size: .95rem
+}
+
+.pf-body h4 {
+    margin: 0 0 .55rem;
+    font-size: .75rem;
+    letter-spacing: .06em;
+    color: var(--mute)
+}
+
+.pf-row {
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+    padding: .6rem .6rem .6rem .9rem;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    margin-bottom: .5rem
+}
+
+.pf-row .t {
+    flex: 1;
+    min-width: 0
+}
+
+.pf-row .t span {
+    display: block;
+    font-size: .72rem;
+    color: var(--mute)
+}
+
+.pf-row .t b {
+    font-size: 1rem;
+    font-variant-numeric: tabular-nums
+}
+
+.callbtn2 {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--ok-bg);
+    color: var(--ok);
+    flex: none
+}
+
+.callbtn2:hover {
+    background: #cfecdb;
+    text-decoration: none
+}
+
+.callbtn2 svg {
+    width: 19px;
+    height: 19px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linejoin: round
+}
+
+.addr {
+    margin-bottom: .7rem
+}
+
+.addr span {
+    font-size: .72rem;
+    color: var(--mute)
+}
+
+.addr p {
+    margin: .1rem 0 0;
+    font-weight: 500;
+    line-height: 1.55;
+    overflow-wrap: anywhere
+}
+
+.pf-foot {
+    display: flex;
+    gap: .6rem;
+    padding: .9rem 1.4rem calc(.9rem + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--line);
+    background: var(--soft)
+}
+
+.pf-foot .btn {
+    flex: 1;
+    min-height: 46px
+}
+
+.btn.danger {
+    color: var(--bad);
+    border-color: #f5c2bd
+}
+
+.btn.danger:hover {
+    background: var(--bad-bg)
+}
+
+/* dashboard */
+.dsec {
+    margin-bottom: 1.5rem
+}
+
+.dsec-t {
+    margin: 0 0 .75rem;
+    font-size: 1.02rem
+}
+
+.dsec-h {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: .8rem;
+    margin-bottom: .75rem
+}
+
+.dsec-h .dsec-t {
+    margin: 0
+}
+
+.stat3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem
+}
+
+.stat3 .stat b {
+    font-size: 2.3rem
+}
+
+.absent-line {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    margin: .8rem 0 0;
+    color: var(--mute);
+    font-size: .9rem
+}
+
+.seg {
+    display: inline-flex;
+    background: #e2e8f0;
+    border-radius: 11px;
+    padding: 3px
+}
+
+.seg button {
+    border: 0;
+    background: 0;
+    padding: .42rem 1rem;
+    border-radius: 9px;
+    font-weight: 600;
+    color: var(--mute);
+    cursor: pointer
+}
+
+.seg button.on {
+    background: #fff;
+    color: var(--ink);
+    box-shadow: var(--sh)
+}
+
+.salary {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 1.1rem 2rem;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 1.3rem 1.4rem;
+    box-shadow: var(--sh)
+}
+
+.sal-top {
+    grid-column: 1/-1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: .6rem;
+    flex-wrap: wrap
+}
+
+.sal-top>div {
+    display: flex;
+    flex-direction: column
+}
+
+.sal-month {
+    font-size: 1.15rem
+}
+
+.state-chip {
+    padding: .28rem .8rem;
+    border-radius: 99px;
+    font-size: .8rem;
+    font-weight: 700;
+    background: var(--warn-bg);
+    color: var(--warn)
+}
+
+.state-chip.ok {
+    background: var(--ok-bg);
+    color: var(--ok)
+}
+
+.state-chip.late {
+    background: var(--bad-bg);
+    color: var(--bad)
+}
+
+.rows {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    align-self: start
+}
+
+.rows li {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    padding: .7rem 0;
+    border-bottom: 1px dashed var(--line)
+}
+
+.rows li.tot {
+    border: 0;
+    padding-top: .95rem
+}
+
+.rows li.tot span {
+    font-weight: 700
+}
+
+.rows li.tot b {
+    font-size: 1.75rem;
+    color: var(--accent)
+}
+
+.sal-right {
+    display: grid;
+    gap: .9rem;
+    align-content: start
+}
+
+.paystat {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .7rem
+}
+
+.paystat>div {
+    padding: .85rem 1rem;
+    border-radius: 12px
+}
+
+.paystat .ok {
+    background: var(--ok-bg);
+    color: var(--ok)
+}
+
+.paystat .wait {
+    background: var(--warn-bg);
+    color: var(--warn)
+}
+
+.paystat span,
+.paystat small {
+    display: block;
+    font-size: .76rem;
+    font-weight: 600
+}
+
+.paystat b {
+    display: block;
+    font-size: 1.35rem;
+    line-height: 1.3
+}
+
+.sal-right .btn {
+    min-height: 46px
+}
+
+.qa {
+    margin: 0 0 1rem
+}
+
+/* attendance page */
+.sumbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .6rem;
+    align-items: stretch;
+    margin: 0 0 .9rem
+}
+
+.sumbar>div {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: .55rem 1rem;
+    box-shadow: var(--sh)
+}
+
+.sumbar span {
+    display: block;
+    font-size: .72rem;
+    color: var(--mute)
+}
+
+.sumbar b {
+    font-size: 1.1rem
+}
+
+.sumbar .ok b {
+    color: var(--ok)
+}
+
+.sumbar .wait b {
+    color: var(--warn)
+}
+
+.sumbar small {
+    align-self: center;
+    color: var(--mute);
+    margin-left: auto
+}
+
+.leave-line {
+    margin: 1rem 0 .7rem;
+    font-size: .87rem;
+    color: var(--mute)
+}
+
+.leave-line b {
+    color: var(--ink)
+}
+
+.leave-line .sep {
+    margin: 0 .45rem;
+    opacity: .5
+}
+
+details.more {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 0 .95rem;
+    background: var(--soft)
+}
+
+.more summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: .75rem 0;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: .9rem;
+    list-style: none
+}
+
+.more summary::-webkit-details-marker {
+    display: none
+}
+
+.more summary::after {
+    content: "›";
+    font-size: 1.3rem;
+    line-height: 1;
+    color: var(--mute);
+    transform: rotate(90deg);
+    transition: transform .2s
+}
+
+.more[open] summary::after {
+    transform: rotate(-90deg)
+}
+
+.more[open] summary {
+    border-bottom: 1px solid var(--line)
+}
+
+.more .pay {
+    padding: .3rem 0 .5rem
+}
+
+.day {
+    font-size: .86rem
+}
+
+.day.fut {
+    background: #f1f5f9;
+    color: #94a3b8
+}
+
+.legend {
+    font-size: .78rem
+}
+
+@media(max-width:900px) {
+    .salary {
+        grid-template-columns: 1fr
+    }
+}
+
+@media(max-width:800px) {
+    .stat3 {
+        gap: .55rem
+    }
+
+    .stat3 .stat {
+        padding: .8rem .85rem
+    }
+
+    .stat3 .stat span {
+        font-size: .68rem;
+        letter-spacing: 0
+    }
+
+    .stat3 .stat b {
+        font-size: 1.8rem
+    }
+
+    .seg button {
+        padding: .4rem .8rem
+    }
+
+    .salary {
+        padding: 1.1rem
+    }
+
+    .sumbar>div {
+        flex: 1 1 28%;
+        padding: .5rem .7rem
+    }
+
+    .sumbar small {
+        flex-basis: 100%;
+        margin: 0
+    }
+
+    #viewDlg {
+        margin: auto 0 0;
+        width: 100vw;
+        max-width: 100vw;
+        border-radius: 22px 22px 0 0
+    }
+
+    .pf-head::before {
+        content: "";
+        display: block;
+        width: 42px;
+        height: 4px;
+        border-radius: 4px;
+        background: #cbd5e1;
+        margin: -.7rem auto .9rem
+    }
+
+    .pf-body {
+        max-height: 58dvh
+    }
+}
+
+.field-hint {
+    grid-column: 1/-1;
+    margin: 0;
+    font-size: .8rem;
+    color: var(--mute);
+    line-height: 1.5
+}
+
+/* ================= v5: green ticks, better phone form ================= */
+@keyframes pop {
+    0% {
+        transform: scale(.3);
+        opacity: 0
+    }
+
+    70% {
+        transform: scale(1.15)
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1
+    }
+}
+
+.tick {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #16a34a;
+    color: #fff;
+    animation: pop .35s
+}
+
+.tick svg,
+.bigtick svg {
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round
+}
+
+.tick svg {
+    width: 15px;
+    height: 15px;
+    stroke-width: 3.2
+}
+
+.att-card header {
+    gap: .6rem
+}
+
+.att-card.is-paid {
+    border-color: #a9dfc5;
+    box-shadow: 0 0 0 3px rgba(22, 163, 74, .08), var(--sh)
+}
+
+.paid-chip {
+    display: inline-flex;
+    align-items: center
+}
+
+.paid-chip svg,
+.state-chip svg,
+#payAll svg {
+    width: 14px;
+    height: 14px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    margin-right: .3rem
+}
+
+.state-chip {
+    display: inline-flex;
+    align-items: center
+}
+
+#payAll.done {
+    background: var(--ok);
+    box-shadow: none;
+    opacity: 1;
+    cursor: default
+}
+
+#payAll {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center
+}
+
+.paid-ok {
+    display: grid;
+    justify-items: center;
+    gap: .3rem;
+    text-align: center;
+    padding: 1.3rem 1rem;
+    background: var(--ok-bg);
+    border-radius: 14px;
+    color: var(--ok)
+}
+
+.bigtick {
+    display: grid;
+    place-items: center;
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    background: #16a34a;
+    color: #fff;
+    animation: pop .4s;
+    box-shadow: 0 8px 20px -8px rgba(22, 163, 74, .7)
+}
+
+.bigtick svg {
+    width: 32px;
+    height: 32px;
+    stroke-width: 3.2
+}
+
+.paid-ok b {
+    font-size: 1.3rem
+}
+
+.paid-ok small {
+    color: #3f7f5f;
+    font-weight: 600
+}
+
+/* staff form */
+.sec {
+    background: var(--soft);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: .95rem
+}
+
+.sec h4 {
+    margin-bottom: .8rem
+}
+
+@media(max-width:800px) {
+    #dlg {
+        margin: auto 0 0;
+        width: 100vw;
+        max-width: 100vw;
+        border-radius: 22px 22px 0 0
+    }
+
+    #dlg form {
+        max-height: 94dvh
+    }
+
+    .dlg-head {
+        padding: .85rem 1.1rem
+    }
+
+    .dlg-body {
+        padding: .9rem 1rem;
+        gap: .85rem
+    }
+
+    .fields {
+        grid-template-columns: 1fr 1fr;
+        gap: .7rem
+    }
+
+    .fields.one {
+        grid-template-columns: 1fr
+    }
+
+    .fields input,
+    .fields textarea {
+        font-size: 16px;
+        min-height: 46px
+    }
+
+    .fields textarea {
+        min-height: 66px
+    }
+
+    .fields label {
+        font-size: .78rem
+    }
+
+    #dlg .actions {
+        padding: .8rem 1rem calc(.8rem + env(safe-area-inset-bottom))
+    }
+
+    #dlg .actions .btn {
+        flex: 1;
+        min-height: 46px
+    }
+
+    .pf-head {
+        padding-bottom: .7rem
+    }
+
+    .pf-body {
+        gap: .9rem
+    }
+
+    .pf-pay {
+        padding: .7rem 1rem
+    }
+
+    .pf-pay b {
+        font-size: 1.3rem
+    }
+
+    .pf-row {
+        padding: .45rem .5rem .45rem .85rem
+    }
+}
+
+/* ================= v6: dashboard salary card (any month) + card footer ================= */
+.salary {
+    display: block;
+    padding: 1.1rem 1.3rem 1.3rem
+}
+
+.sal-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: .6rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.1rem
+}
+
+.mpick {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    background: var(--soft);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 3px
+}
+
+.mpick b {
+    min-width: 140px;
+    text-align: center;
+    font-size: 1rem
+}
+
+.mpick .mn {
+    width: 38px;
+    height: 38px;
+    border: 0;
+    border-radius: 9px;
+    background: #fff;
+    box-shadow: var(--sh);
+    font-size: 1.35rem;
+    line-height: 1;
+    cursor: pointer;
+    color: var(--ink)
+}
+
+.mpick .mn:disabled {
+    opacity: .3;
+    cursor: not-allowed;
+    box-shadow: none;
+    background: transparent
+}
+
+.sal-main {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 1.6rem;
+    align-items: center
+}
+
+.sal-hero .lbl {
+    display: block;
+    font-size: .82rem;
+    font-weight: 600;
+    color: var(--mute)
+}
+
+.sal-hero .amt {
+    display: block;
+    font-size: 2.7rem;
+    line-height: 1.2;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums
+}
+
+.sal-hero .calc {
+    margin: .35rem 0 .2rem;
+    color: var(--mute);
+    font-size: .92rem
+}
+
+.sal-status {
+    display: grid;
+    gap: .75rem;
+    padding: 1rem 1.1rem;
+    background: var(--soft);
+    border: 1px solid var(--line);
+    border-radius: 14px
+}
+
+.sbar {
+    height: 8px;
+    border-radius: 99px;
+    background: var(--line);
+    overflow: hidden
+}
+
+.sbar i {
+    display: block;
+    height: 100%;
+    background: #16a34a;
+    border-radius: 99px
+}
+
+.srow {
+    display: flex;
+    justify-content: space-between;
+    gap: .6rem;
+    font-size: .8rem;
+    color: var(--mute)
+}
+
+.srow b {
+    display: block;
+    font-size: 1.12rem;
+    color: var(--ink)
+}
+
+.srow span:first-child b {
+    color: var(--ok)
+}
+
+.srow span:last-child {
+    text-align: right
+}
+
+.srow span:last-child b {
+    color: var(--warn)
+}
+
+.paid-strip {
+    display: flex;
+    align-items: center;
+    gap: .8rem
+}
+
+.paid-strip b {
+    display: block;
+    color: var(--ok);
+    font-size: 1.05rem
+}
+
+.paid-strip small {
+    color: #3f7f5f;
+    font-weight: 600
+}
+
+.tick.lg {
+    width: 42px;
+    height: 42px
+}
+
+.tick.lg svg {
+    width: 23px;
+    height: 23px
+}
+
+.sal-status .btn {
+    min-height: 44px
+}
+
+.empty-sal {
+    margin: 1.2rem 0 .4rem;
+    color: var(--mute);
+    text-align: center
+}
+
+/* attendance card footer */
+.att-card footer {
+    display: grid;
+    gap: .55rem;
+    margin-top: .9rem;
+    justify-content: stretch
+}
+
+.att-card footer .pst {
+    display: flex
+}
+
+.att-card footer .pst .paid-chip {
+    flex: 1;
+    justify-content: center;
+    padding: .55rem .8rem;
+    white-space: normal;
+    text-align: center
+}
+
+.att-card footer .acts {
+    display: flex;
+    gap: .55rem
+}
+
+.att-card footer .acts>* {
+    flex: 1;
+    min-height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center
+}
+
+@media(max-width:800px) {
+    .sal-main {
+        grid-template-columns: 1fr;
+        gap: 1rem
+    }
+
+    .sal-hero .amt {
+        font-size: 2.3rem
+    }
+
+    .mpick {
+        width: 100%
+    }
+
+    .mpick b {
+        min-width: 0;
+        flex: 1
+    }
+
+    .salary {
+        padding: 1rem
+    }
+}
+
+/* ================= v7: salary card back to the earlier layout (month changeable) ================= */
+.salary {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 1.1rem 2rem;
+    padding: 1.3rem 1.4rem
+}
+
+.sal-top {
+    grid-column: 1/-1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: .6rem;
+    flex-wrap: wrap;
+    margin-bottom: 0
+}
+
+.rows {
+    display: block
+}
+
+.sal-right {
+    display: grid;
+    gap: .9rem;
+    align-content: start
+}
+
+.paid-ok {
+    display: grid
+}
+
+@media(max-width:900px) {
+    .salary {
+        grid-template-columns: 1fr
+    }
+}
+
+@media(max-width:800px) {
+    .salary {
+        padding: 1rem
     }
 }

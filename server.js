@@ -41,7 +41,9 @@ async function calculatePayroll(ym) {
 
   return staff.map(s => {
     const j = new Date(s.joinDate), mine = count[s._id] || {};
-    let y = j.getUTCFullYear(), m = j.getUTCMonth() + 1, carry = 0, r = null;
+    const jm = j.getUTCFullYear() + '-' + String(j.getUTCMonth() + 1).padStart(2, '0');
+    const [sy, sm] = (s.trackFrom && s.trackFrom > jm ? s.trackFrom : jm).split('-').map(Number); // হিসাব শুরুর মাস
+    let y = sy, m = sm, carry = s.openLeave || 0, r = null; // আগে থেকে জমা ছুটি দিয়ে শুরু
     while (y < Y || (y === Y && m <= M)) {
       const avail = carry + FREE_OFF, used = mine[`${y}-${String(m).padStart(2, '0')}`] || 0;
       r = { avail, used, unpaid: Math.max(0, used - avail), carry: Math.max(0, avail - used) };
@@ -83,6 +85,10 @@ app.post('/api/auth/password', wrap(async (q, s) => {
 app.get('/api/staff', wrap(async (q, s) => s.json(await Staff.find(q.query.status ? { status: q.query.status } : {}).sort('name'))));
 
 app.post('/api/staff', wrap(async (q, s) => {
+  if (!q.body.trackFrom) { // আগে যোগ দেওয়া কর্মীর হিসাব চলতি মাস থেকে শুরু
+    const jm = new Date(q.body.joinDate || Date.now()).toISOString().slice(0, 7), cm = bdNow().toISOString().slice(0, 7);
+    q.body.trackFrom = jm > cm ? jm : cm;
+  }
   for (let i = 0; i < 5; i++) {
     try { return s.json(await Staff.create(q.body)); }
     catch (e) {
@@ -167,28 +173,32 @@ app.put('/api/adjust', wrap(async (q, s) => {
   s.json(await Adjust.findOneAndUpdate({ staff, month }, { bonus: +bonus || 0, advance: +advance || 0 }, { upsert: true, new: true }));
 }));
 
+const sumPay = (rows, month, dueDate) => {
+  const r = rows.filter(x => x.inMonth), paid = r.filter(x => x.paid), s = k => r.reduce((a, x) => a + (+x[k] || 0), 0);
+  return {
+    month, dueDate, count: r.length, gross: s('base') + s('deduction'), deduction: s('deduction'), bonus: s('bonus'), advance: s('advance'), net: s('net'),
+    paidCount: paid.length, paidAmount: paid.reduce((a, x) => a + x.paid.amount, 0), remaining: r.filter(x => !x.paid).reduce((a, x) => a + x.net, 0)
+  };
+};
 app.get('/api/dashboard', wrap(async (q, s) => {
-  const now = bdNow(), today = now.toISOString().slice(0, 10), ym = today.slice(0, 7);
-  const prev = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1)).toISOString().slice(0, 7);
+  const now = bdNow(), today = now.toISOString().slice(0, 10), ym = today.slice(0, 7), Y = now.getUTCFullYear(), M = now.getUTCMonth();
+  const ymOf = (y, m) => new Date(Date.UTC(y, m, 1)).toISOString().slice(0, 7);
+  const prev = ymOf(Y, M - 1), next = ymOf(Y, M + 1);
   const staff = await Staff.find({ status: 'active' });
   const offToday = await Attendance.find({ date: today }).populate('staff', 'name role status');
-  const pay = await calculatePayroll(ym);
-  const prevRows = (await withPaid(prev)).filter(r => r.inMonth);
-
+  const [prevRows, curRows] = await Promise.all([withPaid(prev), withPaid(ym)]);
   s.json({
     total: staff.length,
     off: offToday.filter(o => o.staff?.status === 'active').map(o => o.staff),
-    payroll: pay.reduce((a, r) => a + r.net, 0),
-    monthlyBase: staff.reduce((a, r) => a + r.salary, 0),
-    topBalance: pay.sort((a, b) => b.carry - a.carry).slice(0, 5),
-    // আগের মাসের বেতন (চলতি মাসের ১০ তারিখে দেওয়া হয়)
-    due: {
-      month: prev, dueDate: ym + '-10', count: prevRows.length,
-      total: prevRows.reduce((a, r) => a + r.net, 0),
-      paidCount: prevRows.filter(r => r.paid).length,
-      paidAmount: prevRows.reduce((a, r) => a + (r.paid ? r.paid.amount : 0), 0)
-    }
+    // pay.prev = আগের মাসের বেতন (চলতি মাসের ১০ তারিখে দেওয়া হয়), pay.cur = চলতি মাসের হিসাব
+    pay: { prev: sumPay(prevRows, prev, ym + '-10'), cur: sumPay(curRows, ym, next + '-10') }
   });
+}));
+
+app.get('/api/summary', wrap(async (q, s) => { // যেকোনো মাসের বেতনের সারসংক্ষেপ
+  const m = q.query.month; if (!validYm(m)) throw new Error('মাস সঠিক নয়');
+  const [Y, M] = m.split('-').map(Number), due = new Date(Date.UTC(Y, M, 1)).toISOString().slice(0, 7) + '-10';
+  s.json(sumPay(await withPaid(m), m, due));
 }));
 
 // ---------- DB CONNECTION & START ----------
