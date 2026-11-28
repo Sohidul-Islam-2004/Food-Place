@@ -2951,3 +2951,9 @@ details.more {
         padding: 1rem
     }
 }
+
+.sal-top>.mpick {
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center
+}
